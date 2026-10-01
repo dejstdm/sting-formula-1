@@ -4,7 +4,7 @@ import '@fontsource/barlow-condensed/700.css';
 import './ui/style.css';
 
 import * as THREE from 'three/webgpu';
-import { Stage, post } from './engine/stage';
+import { Stage, post, defaultPost, type PostOptions } from './engine/stage';
 import { quality, debug } from './engine/quality';
 import { Race, RACE, type BoostResult, type BoostWindow } from './game/race';
 import { Track, TRACK } from './world/track';
@@ -36,7 +36,7 @@ const autoPlan = params.get('auto')?.toUpperCase().replace(/[^PGM]/g, '') ?? nul
 
 // ------------------------------------------------------------------ setup
 
-type State = 'loading' | 'intro' | 'launch' | 'countdown' | 'race' | 'finish' | 'result';
+type State = 'loading' | 'intro' | 'launch' | 'countdown' | 'race' | 'finish' | 'result' | 'bench';
 
 const canvas = document.getElementById('gl') as HTMLCanvasElement;
 const stage = new Stage(canvas);
@@ -69,6 +69,72 @@ let finishInfo = { winner: 'player' as 'player' | 'rival', playerX: 0, rivalX: 0
 let playerCoast = 0;
 let rivalCoast = 0;
 let lastLight = -1;
+/** Smoothed real frame time, for the debug overlay. */
+let avgFrame = 1 / 60;
+let worstFrame = 0;
+let worstReset = 0;
+/** Dev + ?debug: running totals posted to the dev server's perf.log every 2 s. */
+const perf = { frames: 0, time: 0, worst: 0, slow: 0, worstAt: '' };
+let perfSent = 0;
+
+/**
+ * Long Animation Frames (Chrome 123+): for every frame over 50 ms, where the time went.
+ * Collected between perf posts so a freeze explains itself in perf.log.
+ */
+let longFrames: Record<string, unknown>[] = [];
+if (import.meta.env.DEV && debug && PerformanceObserver.supportedEntryTypes?.includes('long-animation-frame')) {
+  new PerformanceObserver((list) => {
+    for (const e of list.getEntries() as any[]) {
+      if (longFrames.length >= 6) break;
+      const end = e.startTime + e.duration;
+      longFrames.push({
+        ms: Math.round(e.duration),
+        state,
+        raceT: +race.t.toFixed(2),
+        // Time from the frame's start until rendering began = scripts and event handlers.
+        beforeRender: Math.round((e.renderStart || end) - e.startTime),
+        // Style + layout, then paint/commit after that.
+        styleLayout: e.styleAndLayoutStart ? Math.round(end - e.styleAndLayoutStart) : 0,
+        render: e.renderStart ? Math.round((e.styleAndLayoutStart || end) - e.renderStart) : 0,
+        scripts: (e.scripts ?? [])
+          .filter((s: any) => s.duration > 5)
+          .slice(0, 4)
+          .map((s: any) => `${s.invoker || s.invokerType} ${Math.round(s.duration)}ms`),
+      });
+    }
+  }).observe({ type: 'long-animation-frame', buffered: false });
+}
+
+function postPerf() {
+  if (!import.meta.env.DEV || !debug || perf.frames === 0) return;
+  const sample = {
+    backend: stage.backendName,
+    gpu: stage.gpuName,
+    tier: quality.tier,
+    state,
+    fps: +(perf.frames / perf.time).toFixed(1),
+    avgMs: +((perf.time / perf.frames) * 1000).toFixed(1),
+    worstMs: Math.round(perf.worst * 1000),
+    worstAt: perf.worstAt,
+    boostJs: { ...boostCost },
+    longFrames,
+    slowFrames: perf.slow,
+    mpx: +(stage.renderPixels / 1e6).toFixed(2),
+    drawCalls: stage.renderer.info.render.drawCalls,
+    triangles: stage.renderer.info.render.triangles,
+    res: Math.round(stage.resScale * 100),
+    fxLevel: stage.effectLevel,
+    probeMs: stage.probeMs,
+    dpr: window.devicePixelRatio,
+    window: `${window.innerWidth}x${window.innerHeight}`,
+    hidden: document.hidden,
+    ua: navigator.userAgent,
+  };
+  perf.frames = perf.time = perf.worst = perf.slow = 0;
+  perf.worstAt = '';
+  longFrames = [];
+  fetch('/__perf', { method: 'POST', body: JSON.stringify(sample) }).catch(() => {});
+}
 
 // Camera rig: everything eases toward desired values, so cuts are rare and deliberate.
 const rig = {
@@ -97,6 +163,7 @@ async function boot() {
   setProgress(0.15);
   await Promise.all([document.fonts.load('100px Anton'), document.fonts.load('600 40px "Barlow Condensed"')]);
   setProgress(0.3);
+  sound.prepare();
   await loadRunnerAsset('./models/runner.glb');
   setProgress(0.6);
 
@@ -130,19 +197,59 @@ async function boot() {
   car.root.position.set(4, 0, 0);
   setProgress(0.75);
   await stage.renderer.compileAsync(scene, stage.camera);
+  // compileAsync only covers the main pass. Render real frames through the whole pipeline
+  // (reflection + post) with the car showing, and once with the fallback road material,
+  // so neither the F1 reveal nor an adaptive downgrade compiles shaders mid-game.
+  // View culling is switched off for these frames so objects the intro camera can't see
+  // (finish gantry, far stands...) compile too; otherwise they compiled at race start.
+  stage.camera.position.copy(rig.pos);
+  stage.camera.lookAt(rig.look);
+  car.boost.value = 1;
+  // Shockwave rings are hidden until the first Boost; show them for the warm-up frames.
+  for (const ring of fx.shock.group.children) ring.visible = true;
+  const culled: THREE.Object3D[] = [];
+  scene.traverse((o) => {
+    if (o.frustumCulled) {
+      culled.push(o);
+      o.frustumCulled = false;
+    }
+  });
+  for (const road of [track.roadMaterials.full, track.roadMaterials.noReflection]) {
+    track.road.material = road;
+    stage.render();
+    stage.warmLightPipeline();
+  }
+  track.road.material = track.roadMaterials.full;
+  for (const o of culled) o.frustumCulled = true;
+  for (const ring of fx.shock.group.children) ring.visible = false;
+  car.boost.value = 0;
   car.root.visible = false;
+
+  // Scene side of the adaptive ladder (the post side lives in Stage).
+  stage.onEffectLevel = (level) => {
+    for (const o of track.tagged.lightShafts ?? []) o.visible = level < 2;
+    track.road.material = level < 3 ? track.roadMaterials.full : track.roadMaterials.noReflection;
+  };
+  if (quality.adaptive && !params.has('bench')) await pickStartQuality();
   setProgress(1);
 
   if (debug) {
+    (window as any).__stage = stage;
     debugEl = document.createElement('div');
     debugEl.className = 'debug';
     document.body.append(debugEl);
   }
 
+
   wireInput();
+  stage.startMeasuring();
   stage.renderer.setAnimationLoop(frame);
   window.setTimeout(() => loader.classList.add('done'), 150);
   window.setTimeout(() => loader.remove(), 900);
+  if (params.has('bench')) {
+    startBench();
+    return;
+  }
   if (params.has('skip')) {
     can.root.visible = false;
     startCountdown();
@@ -151,6 +258,39 @@ async function boot() {
   setState('intro');
   hud.show('intro');
   if (autoPlan !== null) window.setTimeout(startLaunch, 1200);
+}
+
+/**
+ * Measure this device on the real race view at full quality (behind the loading screen,
+ * ~0.5 s), then start with the richest effect level that fits the frame budget.
+ * Fast phones and laptops keep everything, including the wet-track reflection.
+ */
+async function pickStartQuality() {
+  // Measure at full quality, whatever the current tier is.
+  stage.resetScale();
+  stage.setEffectLevel(0);
+  // Only measure while the page is really being drawn. A hidden, minimised or covered
+  // window gave meaningless readings (3-5 ms on a GPU that needs 17 ms). Animation frames
+  // only arrive when Chrome is producing frames for this page, so wait for two of them.
+  for (let i = 0; i < 2; i++) await new Promise((r) => requestAnimationFrame(r));
+  player.root.position.set(30, 0, TRACK.playerZ);
+  rival.root.position.set(31.5, 0, TRACK.rivalZ);
+  stage.camera.position.set(25, 1.75, 4.6);
+  stage.camera.lookAt(36, 1.15, -0.1);
+  const ms = await stage.probe();
+  player.root.position.set(0, 0, TRACK.playerZ);
+  rival.root.position.set(0, 0, TRACK.rivalZ);
+  if (!ms) return;
+  // Leave headroom under 16.7 ms for scripts, the HTML overlay and the browser's compositor.
+  const target = 13.5;
+  // Cost relative to full quality at each level (Iris Xe benchmark: 25.2 → 20.3 → 18.4 → 16.3 ms).
+  const factor = [1, 0.81, 0.73, 0.65];
+  let level = factor.findIndex((f) => ms * f <= target);
+  if (level === -1) {
+    level = 3;
+    stage.setScale(Math.sqrt(target / (ms * factor[3])));
+  }
+  stage.setEffectLevel(level);
 }
 
 function placeIntro() {
@@ -198,9 +338,12 @@ function wireInput() {
     if (state === 'intro') startLaunch();
   };
   hud.onBoost = () => tap();
-  hud.onAgain = () => {
+  hud.onAgain = async () => {
     if (state !== 'result') return;
     sound.tick();
+    // Re-measure the device between races: an earlier slowdown may have come from outside
+    // the game (another tab, an app using the GPU), and effects should come back if they fit.
+    if (quality.adaptive) await pickStartQuality();
     resetRace();
     startCountdown();
   };
@@ -301,10 +444,23 @@ function autoTap(nextStep: number) {
   if (due <= nextStep) race.tap(Math.max(0, due));
 }
 
+/** JS time spent in the last Boost handler, split by part (dev perf log). */
+const boostCost = { total: 0, sound: 0, fx: 0, hud: 0 };
+
 function onBoost(r: BoostResult, w: BoostWindow) {
+  const t0 = performance.now();
+  onBoostInner(r, w);
+  boostCost.total = +(performance.now() - t0).toFixed(1);
+}
+
+function onBoostInner(r: BoostResult, w: BoostWindow) {
   const final = w.index === RACE.windows.length - 1;
+  let t = performance.now();
   hud.boostFeedback(r, w.index, final);
+  boostCost.hud = +(performance.now() - t).toFixed(1);
+  t = performance.now();
   sound.boost(r.grade, w.index);
+  boostCost.sound = +(performance.now() - t).toFixed(1);
   const chest = player.root.position.clone().add(new THREE.Vector3(0.2, 1.1, 0));
 
   if (r.grade === 'miss') {
@@ -325,7 +481,9 @@ function onBoost(r: BoostResult, w: BoostWindow) {
   rig.fovKick = perfect ? (final ? 18 : 13) : 7;
   rig.shake = perfect ? 0.55 : 0.25;
   if (perfect) hitstop = final ? 0.12 : 0.07;
+  t = performance.now();
   fx.burst(chest, perfect ? (final ? 360 : 240) : 120, perfect ? 9 : 6, perfect ? 0.6 : 0.3);
+  boostCost.fx = +(performance.now() - t).toFixed(1);
   fx.shock.fire(player.root.position.x, TRACK.playerZ, perfect ? 1.2 : 0.7);
   vibrate(perfect ? [25, 30, 70] : 35);
 }
@@ -347,8 +505,7 @@ function onFinish(winner: 'player' | 'rival') {
     car.root.visible = true;
     car.boost.value = 1;
     sound.flyby(1.7, 1.8);
-    hud.flash('white');
-    post.whiteout.value = 0.5;
+    post.whiteout.value = 0.7;
   } else {
     sound.lose();
     player.play('sad_pose', 0.6);
@@ -412,6 +569,9 @@ function frame() {
     case 'finish':
       updateFinish(dt, gdt);
       break;
+    case 'bench':
+      benchTick(rawDt);
+      break;
     case 'result':
       updateResult(dt, gdt);
       break;
@@ -422,7 +582,8 @@ function frame() {
     player.root.position.x = race.player;
     rival.root.position.x = race.rival;
   }
-  const pSpeed = state === 'race' ? race.playerSpeed : state === 'finish' || state === 'result' ? playerCoast : 0;
+  const pSpeed =
+    state === 'race' ? race.playerSpeed : state === 'finish' || state === 'result' ? playerCoast : state === 'bench' ? 9 : 0;
   const rSpeed = state === 'race' ? RACE.rivalSpeed : state === 'finish' || state === 'result' ? rivalCoast : 0;
   player.lean = state === 'race' ? THREE.MathUtils.clamp((race.playerSpeed - 8) * 0.03, -0.05, 0.28) : 0;
   rival.lean = state === 'race' ? 0.06 : 0;
@@ -460,10 +621,32 @@ function frame() {
   updateCamera(dt);
   if (state === 'race' || state === 'countdown') updateHud();
   if (debugEl) {
-    debugEl.textContent = `${stage.backendName} · q=${quality.tier}\n${(stage.renderPixels / 1e6).toFixed(2)} Mpx · res ${(stage.resScale * 100).toFixed(0)}%\nfps ${(1 / dt).toFixed(0)}\nt ${race.t.toFixed(2)}  E ${race.energy.toFixed(0)}\nP ${race.player.toFixed(1)}  R ${race.rival.toFixed(1)}\nstate ${state}`;
+    perf.frames++;
+    perf.time += rawDt;
+    if (rawDt > perf.worst) {
+      perf.worst = rawDt;
+      // What the game was doing on the slowest frame (the previous frame's events cause it).
+      perf.worstAt = `${state} t=${race.t.toFixed(2)} stateT=${stateT.toFixed(2)} boosts=${race.results.length}`;
+    }
+    if (rawDt > 1 / 45) perf.slow++;
+    perfSent += rawDt;
+    if (perfSent > 2) {
+      perfSent = 0;
+      postPerf();
+    }
+    // Real (unclamped) timing: average over ~1 s plus the worst frame in the last 2 s.
+    avgFrame += (Math.min(rawDt, 1) - avgFrame) * 0.05;
+    worstReset += rawDt;
+    if (worstReset > 2) {
+      worstReset = 0;
+      worstFrame = 0;
+    }
+    worstFrame = Math.max(worstFrame, rawDt);
+    debugEl.textContent = `${debugEl.dataset.bench ? 'BENCH ' + debugEl.dataset.bench + '\n' : ''}${stage.backendName} · q=${quality.tier}\n${(stage.renderPixels / 1e6).toFixed(2)} Mpx · res ${(stage.resScale * 100).toFixed(0)}% · fx -${stage.effectLevel} · probe ${stage.probeMs} ms · dpr ${window.devicePixelRatio}\nfps ${(1 / avgFrame).toFixed(0)} · ${(avgFrame * 1000).toFixed(1)} ms · worst ${(worstFrame * 1000).toFixed(0)} ms\nt ${race.t.toFixed(2)}  E ${race.energy.toFixed(0)}\nP ${race.player.toFixed(1)}  R ${race.rival.toFixed(1)}\nstate ${state}`;
   }
 
   stage.render();
+  stage.allowUpscale = state !== 'race' && state !== 'finish';
   stage.adapt(rawDt);
 }
 
@@ -485,7 +668,6 @@ function updateLaunch(dt: number) {
     post.aberration.value = 1.5;
     post.speedBlur.value = 1;
     rig.shake = 0.6;
-    hud.flash('red');
     vibrate([20, 30, 60]);
   }
   if (stateT > 1.25) startCountdown();
@@ -506,7 +688,7 @@ function updateCountdown() {
   const out = step * 5 + 0.45;
   if (stateT >= out) {
     track.startLights.forEach((u) => (u.value = 0));
-    hud.countWord('STING!', 'sting');
+    hud.countWord('STING!');
     lastLight = -1;
     startRace();
   }
@@ -554,7 +736,7 @@ function updateFinish(dt: number, gdt: number) {
     cx = THREE.MathUtils.lerp(F - 24, F + 46, k * (0.7 + 0.3 * k));
     speed = 42;
     car.root.rotation.z = 0;
-    if (Math.random() < 0.6) fx.sparks(new THREE.Vector3(cx - 2.2, 0.08, 0), speed, 3);
+    if (Math.random() < 0.6) fx.sparks(tmp2.set(cx - 2.2, 0.08, 0), speed, 3);
   } else {
     const k = t - 2.7;
     cx = F + 46 + 40 * k + 30 * k * k;
@@ -709,6 +891,127 @@ function updateHud() {
     zone: race.activeWindow ? race.zoneProgress() : null,
     tags: { me: proj(player.root), rival: proj(rival.root) },
   });
+}
+
+// --------------------------------------------------------------- benchmark
+
+/**
+ * ?bench: holds a fixed race view at a fixed resolution and times the frame with
+ * each expensive feature switched off in turn, so we can see what this GPU pays for.
+ * Results are shown on screen and, in dev, appended to perf.log.
+ */
+interface BenchStep {
+  name: string;
+  /** Pixel budget for this step (default: the tier's budget). */
+  px?: number;
+  post?: Partial<PostOptions>;
+  road?: 'full' | 'noReflection' | 'flat';
+  hide?: string[];
+}
+
+const LIGHT: Pick<BenchStep, 'post' | 'road' | 'hide'> = {
+  road: 'noReflection',
+  hide: ['lightShafts'],
+  post: { speedBlur: false, aberration: false },
+};
+const benchSteps: BenchStep[] = [
+  // Not reported: lets shaders compile and the GPU clock settle.
+  { name: 'warm-up' },
+  { name: 'full @ 2.2 Mpx', px: 2_200_000 },
+  { name: 'full @ 1.6 Mpx', px: 1_600_000 },
+  { name: 'full @ 1.2 Mpx', px: 1_200_000 },
+  { name: 'full @ 0.9 Mpx', px: 900_000 },
+  { name: 'light preset @ 2.2 Mpx', px: 2_200_000, ...LIGHT },
+  { name: 'light preset @ 1.6 Mpx', px: 1_600_000, ...LIGHT },
+  { name: 'light preset @ 1.2 Mpx', px: 1_200_000, ...LIGHT },
+  { name: 'no reflection @ 1.6', px: 1_600_000, road: 'noReflection' },
+  { name: 'no light shafts @ 1.6', px: 1_600_000, hide: ['lightShafts'] },
+  { name: 'no bloom @ 1.6', px: 1_600_000, post: { bloom: false } },
+  { name: 'no blur+aberration @ 1.6', px: 1_600_000, post: { speedBlur: false, aberration: false } },
+  { name: 'everything off @ 1.6', px: 1_600_000, road: 'flat', hide: ['lightShafts', 'crowd', 'skyline', 'sky', 'particles'], post: { speedBlur: false, bloom: false, aberration: false, fxaa: false, grade: false } },
+  { name: 'full @ 1.6 again', px: 1_600_000 },
+];
+const SETTLE = 2.5;
+const MEASURE = 4;
+let benchIndex = 0;
+let benchT = 0;
+let benchFrames: number[] = [];
+const benchResults: { name: string; ms: number; p95: number }[] = [];
+
+function startBench() {
+  hud.show('none');
+  can.root.visible = false;
+  stage.fixedScale = true;
+  track.tagged.particles = [fx.particles.sprite, fx.speedLines.mesh];
+  player.root.position.set(30, 0, TRACK.playerZ);
+  rival.root.position.set(31.5, 0, TRACK.rivalZ);
+  player.play('run', 0);
+  rival.play('run', 0);
+  rig.wantPos.set(25, 1.75, 4.6);
+  rig.wantLook.set(36, 1.15, -0.1);
+  rig.pos.copy(rig.wantPos);
+  rig.look.copy(rig.wantLook);
+  rig.follow = 50;
+  energyView = 1;
+  setState('bench');
+  benchIndex = 0;
+  benchT = 0;
+  applyBench(benchSteps[0]);
+}
+
+const tierBudget = quality.pixelBudget;
+
+function applyBench(s: BenchStep) {
+  quality.pixelBudget = s.px ?? tierBudget;
+  stage.resize();
+  stage.setPost({ ...defaultPost(), ...s.post });
+  track.road.material = track.roadMaterials[s.road ?? 'full'];
+  for (const [name, objs] of Object.entries(track.tagged)) {
+    for (const o of objs) o.visible = !s.hide?.includes(name);
+  }
+  benchFrames = [];
+  if (debugEl) debugEl.dataset.bench = `${benchIndex + 1}/${benchSteps.length} ${s.name}`;
+}
+
+function benchTick(rawDt: number) {
+  if (benchIndex >= benchSteps.length) return;
+  benchT += rawDt;
+  // Keep a little motion on screen so particles and animation are exercised.
+  fx.aura(1 / 60, player.root.position, 9, 1, 0);
+  if (benchT > SETTLE) benchFrames.push(rawDt);
+  if (benchT < SETTLE + MEASURE) return;
+  const sorted = [...benchFrames].sort((a, b) => a - b);
+  const avg = benchFrames.reduce((a, b) => a + b, 0) / benchFrames.length;
+  if (benchSteps[benchIndex].name !== 'warm-up') benchResults.push({
+    name: benchSteps[benchIndex].name,
+    ms: +(avg * 1000).toFixed(1),
+    p95: +(sorted[Math.floor(sorted.length * 0.95)] * 1000).toFixed(1),
+  });
+  benchIndex++;
+  benchT = 0;
+  if (benchIndex < benchSteps.length) {
+    applyBench(benchSteps[benchIndex]);
+    return;
+  }
+  finishBench();
+}
+
+function finishBench() {
+  applyBench({ name: 'done' });
+  const lines = benchResults.map(
+    (r) => `${r.name.padEnd(30)} ${r.ms.toFixed(1).padStart(6)} ms  ${(1000 / r.ms).toFixed(0).padStart(3)} fps  (p95 ${r.p95.toFixed(1)} ms)`,
+  );
+  const header = `${stage.backendName} · ${stage.gpuName} · ${window.innerWidth}x${window.innerHeight} @${window.devicePixelRatio}x`;
+  const box = document.createElement('pre');
+  box.className = 'bench-result';
+  box.textContent = `BENCHMARK (frame time, lower is better; capped by display refresh)\n${header}\n\n${lines.join('\n')}`;
+  document.body.append(box);
+  if (import.meta.env.DEV) {
+    fetch('/__perf', {
+      method: 'POST',
+      body: JSON.stringify({ bench: benchResults, header, ua: navigator.userAgent }),
+    }).catch(() => {});
+  }
 }
 
 boot();

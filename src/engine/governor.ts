@@ -1,38 +1,47 @@
 /**
- * Dynamic resolution governor. Feed it real frame times; it answers with a new
- * resolution scale when the average frame is too slow (or has headroom again).
+ * Frame-time governor. Feed it real frame times; it says when the average frame
+ * has been too slow ('down') or comfortably fast ('up'). The caller decides what
+ * to give up: effects first, then resolution (see Stage.adapt).
  * Pure logic, no DOM, so it can be tested in Node.
  */
-export class ResolutionGovernor {
-  scale = 1;
-  private avg = 1 / 60;
-  private sinceChange = 0;
-
-  /** Lowest scale we will drop to. */
-  min = 0.5;
-  /** Frame time above which we scale down (~50 fps). */
-  slow = 1 / 50;
-  /** Frame time below which we scale back up (~58 fps). */
+export class FrameGovernor {
+  /** Frame time above which we ask for less work (~56 fps: a 60 Hz display dropping frames). */
+  slow = 1 / 56;
+  /** Frame time below which there's headroom (~58 fps). */
   fast = 1 / 58;
-  /** Seconds between changes; resizing render targets costs a frame. */
+  /** Seconds between decisions; a change (resize, shader rebuild) costs a frame or two. */
   cooldown = 1.5;
 
-  /** Returns the new scale when it changes, otherwise null. */
-  step(dt: number): number | null {
+  private avg = 1 / 60;
+  private sinceChange = 0;
+  /** Seconds of frames to ignore after a change: its own hitch must not count as slowness. */
+  private grace = 0;
+
+  step(dt: number): 'down' | 'up' | null {
     if (dt <= 0) return null;
+    if (this.grace > 0) {
+      this.grace -= Math.min(dt, 0.1);
+      return null;
+    }
     // Cap each frame's weight at 50 ms: a one-off hitch (tab switch, shader compile)
-    // barely moves the average, while a device that is slow every frame still scales down.
+    // barely moves the average, while a device that is slow every frame still triggers.
     const d = Math.min(dt, 0.05);
     // Time-based smoothing (~0.5 s), so the response doesn't depend on frame rate.
     this.avg += (d - this.avg) * (1 - Math.exp(-d / 0.5));
     this.sinceChange += d;
     if (this.sinceChange < this.cooldown) return null;
-    let next = this.scale;
-    if (this.avg > this.slow) next = Math.max(this.min, this.scale * 0.85);
-    else if (this.avg < this.fast && this.scale < 1) next = Math.min(1, this.scale * 1.1);
-    if (next === this.scale) return null;
-    this.scale = next;
+    const verdict = this.avg > this.slow ? 'down' : this.avg < this.fast ? 'up' : null;
+    if (verdict) this.sinceChange = 0;
+    return verdict;
+  }
+
+  /**
+   * Call after any change (effects dropped, resize). Forgets the old average and ignores
+   * the next `grace` seconds of frames, which include the change's own hitch.
+   */
+  reset(grace = 1) {
+    this.avg = 1 / 60;
     this.sinceChange = 0;
-    return next;
+    this.grace = grace;
   }
 }

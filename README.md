@@ -21,8 +21,9 @@ node scripts/sim.ts  # prints win/lose for all 27 Boost combinations
 | `?auto=PPG` | Plays itself: P = perfect, G = good, M = miss. Use for demos and QA. |
 | `?q=low\|mid\|high` | Quality tier. Defaults to `high` on desktop and `mid` on touch devices. |
 | `?webgl` | Forces the WebGL2 backend instead of WebGPU. |
-| `?px=3000000` | Pixel budget per frame (default 2.2M desktop, 1.3M mobile). Resolution is capped to fit it. |
-| `?fixedres` | Turns off automatic resolution scaling. |
+| `?px=3000000` | Pixel budget per frame (default 2.2M desktop, 1.4M on integrated laptop GPUs, 1.3M mobile). Resolution is capped to fit it. |
+| `?fixedres` | Turns off automatic quality scaling (effects and resolution). |
+| `?bench` | Benchmark: holds a race view and times effect and resolution combinations. The results table shows on screen. |
 | `?debug` | Shows the backend, rendered megapixels, resolution scale, fps and race state. |
 | `?skip` | Skips the can intro and goes straight to the start lights. |
 | `?capture` | Allows large frame steps, so slow headless browsers keep real-time pacing. |
@@ -40,6 +41,19 @@ Space or Enter does everything, which covers the Grand Prix big-screen version: 
 | Assets | One compressed GLB (the runner, 611 KB with meshopt) | Everything else is procedural: track, car, can, crowd, skyline, signage. |
 
 Download size is about 1.0 MB over the wire: 309 KB of gzipped JS, the 611 KB runner model, and about 80 KB of fonts. For comparison, Daniel's Bus Run ships 1.3 MB of JS plus about 4.3 MB of GLB models and WAV audio.
+
+## Performance
+
+Every effect is a full-screen pass, so cost scales with pixels. On a laptop with Intel Iris Xe graphics (measured with `?bench`), the full look costs about 25 ms at 1.6 Mpx. Dropping speed blur and colour split saves about 5 ms, the wet-track reflection about 4 ms, and the light shafts about 2 ms.
+
+The game adapts by itself, in two steps:
+
+1. **Startup probe.** Behind the loading screen it renders about a dozen full-quality frames of the race view and waits for the GPU to finish each one (WebGPU `onSubmittedWorkDone`, or a one-pixel readback on WebGL2). That gives the device's real cost per frame, independent of the display's 60 Hz cap. It then starts at the richest effect level that fits a 13.5 ms budget. Fast phones and laptops keep everything, including the wet-track reflection.
+2. **Live ladder.** If frames still run below about 56 fps for around 3 seconds in a row, it drops one more tier: speed blur and colour split first, then the light shafts, then the reflection. After that it lowers resolution, down to 60%. Single hitches are ignored, and resolution only rises between races.
+
+Integrated laptop GPUs start with a 1.4 Mpx budget. The `?debug` overlay shows the probe result (`probe N ms`) and the current tier (`fx -N`).
+
+In dev, opening the game with `?debug` appends a performance sample to `perf.log` every 2 seconds (backend, GPU, fps, worst frame, Mpx, effect level). That makes real-device numbers easy to share.
 
 ## Where things live
 

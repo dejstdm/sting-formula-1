@@ -5,6 +5,7 @@ dist
 
 # Logs
 *.log
+perf.log
 npm-debug.log*
 
 # Env files

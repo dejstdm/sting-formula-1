@@ -21,7 +21,7 @@ import { chromaticAberration } from 'three/addons/tsl/display/ChromaticAberratio
 import { radialBlur } from 'three/addons/tsl/display/radialBlur.js';
 import { fxaa } from 'three/addons/tsl/display/FXAANode.js';
 import { quality } from './quality';
-import { ResolutionGovernor } from './governor';
+import { FrameGovernor } from './governor';
 
 /**
  * Everything the game animates on the post stack lives here as a uniform,
@@ -45,15 +45,52 @@ export const post = {
   bloomStrength: uniform(0.9),
 };
 
+export interface PostOptions {
+  speedBlur: boolean;
+  bloom: boolean;
+  aberration: boolean;
+  fxaa: boolean;
+  grade: boolean;
+}
+
+export const defaultPost = (): PostOptions => ({
+  speedBlur: quality.speedBlur,
+  bloom: true,
+  aberration: quality.aberration,
+  fxaa: quality.fxaa,
+  grade: true,
+});
+
 export class Stage {
   renderer: THREE.WebGPURenderer;
   scene = new THREE.Scene();
   camera = new THREE.PerspectiveCamera(40, 1, 0.1, 1200);
   pipeline!: THREE.RenderPipeline;
+  /** Pre-built lighter chain (no speed blur / colour split), so the first downgrade is instant. */
+  private lightPipeline?: THREE.RenderPipeline;
+  private fullPipeline!: THREE.RenderPipeline;
   /** Horizontal field of view the camera rig asks for; vertical FOV is derived per aspect. */
   hFov = 70;
-  /** Dynamic resolution: 1 = full budget, lowered when frames are slow. */
-  private governor = new ResolutionGovernor();
+  private governor = new FrameGovernor();
+  private postOpts: PostOptions = defaultPost();
+  /** Resolution multiplier on top of the pixel budget; only lowered after effects are gone. */
+  private scale = 1;
+  /** A scale that proved too slow is never returned to, so we don't bounce up and down. */
+  private ceiling = 1;
+  /**
+   * How many effect tiers are off to hold frame rate. Measured on an Intel Iris Xe at
+   * 1.6 Mpx: speed blur + colour split ~5 ms, light shafts ~2 ms, reflection ~1-4 ms.
+   * The wet-track reflection is the signature look, so it goes last.
+   * 0: everything, 1: no speed blur / colour split, 2: + no light shafts, 3: + no reflection.
+   */
+  effectLevel = 0;
+  readonly maxEffectLevel = 3;
+  /** Scene-side part of the ladder (light shafts, reflection), wired up by the game. */
+  onEffectLevel?: (level: number) => void;
+  /** Startup GPU probe result (ms per full-quality frame), for the debug overlay and perf log. */
+  probeMs = 0;
+  /** Consecutive 'down' verdicts; the live ladder only acts on sustained slowness. */
+  private strikes = 0;
 
   constructor(canvas: HTMLCanvasElement) {
     this.renderer = new THREE.WebGPURenderer({
@@ -70,8 +107,33 @@ export class Stage {
 
   async init() {
     await this.renderer.init();
-    this.buildPipeline();
+    this.pipeline = new THREE.RenderPipeline(this.renderer);
+    this.setPost(defaultPost());
+    this.fullPipeline = this.pipeline;
+    if (quality.adaptive && (quality.speedBlur || quality.aberration)) {
+      this.lightPipeline = new THREE.RenderPipeline(this.renderer);
+      this.lightPipeline.outputNode = this.buildPost({ ...defaultPost(), speedBlur: false, aberration: false });
+    }
+    // Integrated laptop GPUs (Intel Iris Xe measured ~33 ms at 2.2 Mpx) start on a smaller budget.
+    if (quality.tier === 'high' && !quality.customBudget && /intel|gen-\d|iris|uhd|integrated/i.test(this.gpuName)) {
+      quality.pixelBudget = 1_400_000;
+    }
     this.resize();
+  }
+
+  /** Which GPU the browser actually gave us (integrated vs dedicated matters a lot on laptops). */
+  get gpuName(): string {
+    const b = (this.renderer as any).backend;
+    try {
+      const info = b?.device?.adapterInfo;
+      if (info) return [info.vendor, info.architecture, info.description].filter(Boolean).join(' / ') || 'unknown';
+      const gl: WebGL2RenderingContext | undefined = b?.gl;
+      const ext = gl?.getExtension('WEBGL_debug_renderer_info');
+      if (gl && ext) return String(gl.getParameter(ext.UNMASKED_RENDERER_WEBGL));
+    } catch {
+      /* not exposed */
+    }
+    return 'unknown';
   }
 
   get backendName(): string {
@@ -79,11 +141,18 @@ export class Stage {
     return b?.isWebGPUBackend ? 'WebGPU' : 'WebGL2';
   }
 
-  private buildPipeline() {
+  /** Rebuild the post chain. Used at startup and by the benchmark to switch effects off one at a time. */
+  setPost(o: PostOptions) {
+    this.postOpts = o;
+    this.pipeline.outputNode = this.buildPost(o);
+    this.pipeline.needsUpdate = true;
+  }
+
+  private buildPost(o: PostOptions) {
     const scenePass = pass(this.scene, this.camera);
     let color: any = scenePass.getTextureNode('output');
 
-    if (quality.speedBlur) {
+    if (o.speedBlur) {
       const blurred = radialBlur(color, {
         center: post.focus,
         weight: float(1),
@@ -94,13 +163,17 @@ export class Stage {
       color = mix(color, blurred as any, post.speedBlur.clamp(0, 1));
     }
 
-    const glow = bloom(color, 1, 0.45, 0.82);
-    glow.strength = post.bloomStrength as any;
-    color = color.add(glow);
+    if (o.bloom) {
+      const glow = bloom(color, 1, 0.45, 0.82);
+      glow.strength = post.bloomStrength as any;
+      color = color.add(glow);
+    }
 
-    if (quality.aberration) {
+    if (o.aberration) {
       color = chromaticAberration(color, post.aberration, vec2(0.5, 0.5), float(1.15));
     }
+
+    if (!o.grade) return o.fxaa ? fxaa(vec4(color.rgb, 1)) : vec4(color.rgb, 1);
 
     // Energy grade: a drained world is cold and grey, a charged one is warm and saturated.
     const e = post.energy.clamp(0, 1.4);
@@ -124,16 +197,14 @@ export class Stage {
     rgb = rgb.add(grain).mul(post.exposure);
 
     let out: any = vec4(rgb, 1);
-    if (quality.fxaa) out = fxaa(out);
-
-    this.pipeline = new THREE.RenderPipeline(this.renderer);
-    this.pipeline.outputNode = out;
+    if (o.fxaa) out = fxaa(out);
+    return out;
   }
 
   /** Pixel ratio that fits the pixel budget for this window, times the dynamic scale. */
   private pixelRatio(w: number, h: number) {
     const fit = Math.sqrt(quality.pixelBudget / Math.max(1, w * h));
-    return Math.max(0.5, Math.min(window.devicePixelRatio, quality.maxDpr, fit) * this.resScale);
+    return Math.max(0.5, Math.min(window.devicePixelRatio, quality.maxDpr, fit) * this.scale);
   }
 
   get renderPixels() {
@@ -142,18 +213,107 @@ export class Stage {
   }
 
   get resScale() {
-    return this.governor.scale;
+    return this.scale;
   }
 
-  /** Called every frame with the real (unclamped) frame time. */
+  /**
+   * Called every frame with the real (unclamped) frame time. When frames are slow,
+   * drop the costliest effects first, and only then resolution. Effects stay off once
+   * dropped (no flicker); resolution recovers when there is headroom.
+   */
   adapt(dt: number) {
-    if (quality.adaptive && this.governor.step(dt) !== null) this.resize();
+    if (!quality.adaptive || this.fixedScale) return;
+    const v = this.governor.step(dt);
+    if (v !== null) this.strikes = v === 'down' ? this.strikes + 1 : 0;
+    // Two slow verdicts in a row (~3 s of slowness): a single hitch never costs an effect.
+    if (v === 'down' && this.strikes < 2) return;
+    if (v === 'down') {
+      this.strikes = 0;
+      if (this.effectLevel < this.maxEffectLevel) {
+        this.setEffectLevel(this.effectLevel + 1);
+        this.governor.reset();
+      } else if (this.scale > 0.6 && this.pixelRatio(window.innerWidth, window.innerHeight) > 0.5) {
+        this.ceiling = Math.min(this.ceiling, this.scale * 0.97);
+        this.scale = Math.max(0.6, this.scale * 0.85);
+        this.resize();
+        this.governor.reset();
+      }
+    } else if (v === 'up' && this.allowUpscale && this.scale < this.ceiling) {
+      this.scale = Math.min(this.ceiling, this.scale * 1.08);
+      this.resize();
+      this.governor.reset();
+    }
   }
+
+  /** Set the effect tier; works in both directions (a re-probe can bring effects back). */
+  setEffectLevel(level: number) {
+    this.effectLevel = level;
+    if (level >= 1) {
+      if (this.lightPipeline) this.pipeline = this.lightPipeline;
+      else this.setPost({ ...this.postOpts, speedBlur: false, aberration: false });
+    } else {
+      this.pipeline = this.fullPipeline;
+      if (!this.lightPipeline) this.setPost(defaultPost());
+    }
+    this.onEffectLevel?.(level);
+    this.strikes = 0;
+    this.governor.reset();
+  }
+
+  /** Back to full resolution before a re-probe; the probe picks the scale again. */
+  resetScale() {
+    this.scale = 1;
+    this.ceiling = 1;
+    this.resize();
+  }
+
+  /** Start at a lower resolution (from the probe). The ceiling stays at 1 so it can recover. */
+  setScale(s: number) {
+    this.scale = THREE.MathUtils.clamp(s, 0.6, 1);
+    this.resize();
+  }
+
+  /**
+   * Time real full-quality frames, waiting for the GPU to finish each one, so the
+   * result is the device's actual cost and not capped by the display's refresh rate.
+   * Returns the median ms per frame, or 0 if the backend can't be synchronised.
+   */
+  async probe(frames = 14): Promise<number> {
+    const b = (this.renderer as any).backend;
+    const device: GPUDevice | undefined = b?.device;
+    const gl: WebGL2RenderingContext | undefined = b?.gl;
+    if (!device && !gl) return 0;
+    const times: number[] = [];
+    const px = new Uint8Array(4);
+    for (let i = 0; i < frames; i++) {
+      const t0 = performance.now();
+      this.pipeline.render();
+      if (device) await device.queue.onSubmittedWorkDone();
+      // gl.finish() doesn't reliably block; reading one pixel back forces a real wait.
+      else gl!.readPixels(0, 0, 1, 1, gl!.RGBA, gl!.UNSIGNED_BYTE, px);
+      times.push(performance.now() - t0);
+    }
+    const settled = times.slice(3).sort((a, c) => a - c);
+    const median = settled[Math.floor(settled.length / 2)];
+    // A sub-millisecond full frame means the sync didn't hold; let the live ladder decide instead.
+    this.probeMs = median >= 1 ? +median.toFixed(1) : 0;
+    return this.probeMs;
+  }
+
+  /** Pin the resolution (benchmark), bypassing the governor. */
+  fixedScale = false;
+  /** Raising resolution resizes render targets (a long frame), so the game only allows it between races. */
+  allowUpscale = true;
 
   resize() {
     const w = window.innerWidth;
     const h = window.innerHeight;
-    this.renderer.setPixelRatio(this.pixelRatio(w, h));
+    const ratio = this.pixelRatio(w, h);
+    const size = this.renderer.getSize(new THREE.Vector2());
+    // Re-allocating render targets costs a long frame; skip it when nothing would change
+    // (e.g. the scale is already below the 0.5x pixel-ratio floor).
+    if (ratio === this.renderer.getPixelRatio() && size.x === w && size.y === h) return;
+    this.renderer.setPixelRatio(ratio);
     this.renderer.setSize(w, h, false);
     this.camera.aspect = w / h;
     this.applyFov();
@@ -171,5 +331,15 @@ export class Stage {
 
   render() {
     this.pipeline.render();
+  }
+
+  /** Render one frame through the pre-built light chain too, so switching to it never compiles mid-game. */
+  warmLightPipeline() {
+    this.lightPipeline?.render();
+  }
+
+  /** The game is starting: forget load-time frame times and give the first frames some grace. */
+  startMeasuring() {
+    this.governor.reset(2);
   }
 }

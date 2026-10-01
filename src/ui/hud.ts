@@ -1,4 +1,4 @@
-import type { BoostGrade, BoostResult } from '../game/race';
+import type { BoostResult } from '../game/race';
 
 const html = (s: string) => {
   const t = document.createElement('template');
@@ -24,7 +24,12 @@ export class Hud {
   private hud: HTMLElement;
   private result: HTMLElement;
   private feedback: HTMLElement;
-  private flashEl: HTMLElement;
+  /**
+   * Feedback labels are built once and kept in the DOM (transparent), so Chrome rasterizes
+   * the big glowing text at load. A Boost then only animates transform/opacity on an existing
+   * layer. Inserting fresh text at each Boost cost ~90 ms on an integrated laptop GPU.
+   */
+  private labels: Record<string, { el: HTMLElement; sub: HTMLElement }> = {};
   private els: Record<string, HTMLElement> = {};
 
   onStart?: () => void;
@@ -50,7 +55,12 @@ export class Hud {
         </div>
       </section>`);
 
-    this.count = html(`<section class="screen countdown"><div class="count-word"></div></section>`);
+    // One persistent element per word, rasterized at load; switching words only animates layers.
+    this.count = html(`<section class="screen countdown">
+        <div class="count-word" data-word="GET.">GET.</div>
+        <div class="count-word" data-word="SET.">SET.</div>
+        <div class="count-word sting" data-word="STING!">STING!</div>
+      </section>`);
 
     this.hud = html(`
       <section class="screen hud">
@@ -84,9 +94,21 @@ export class Hud {
 
     this.result = html(`<section class="screen result"></section>`);
     this.feedback = this.hud.querySelector('.feedback')!;
-    this.flashEl = html(`<div class="flash"></div>`);
+    const defs: [string, string, string][] = [
+      ['perfect', 'perfect', 'PERFECT BOOST'],
+      ['final', 'perfect', 'FINAL PERFECT'],
+      ['good', 'good', 'GOOD BOOST'],
+      ['late', 'miss', 'TOO LATE'],
+      ['missed', 'miss', 'MISSED'],
+      ['early', 'early', 'WAIT FOR IT'],
+    ];
+    for (const [key, cls, text] of defs) {
+      const el = html(`<div class="fb ${cls}"><b>${text}</b><small></small></div>`);
+      this.feedback.append(el);
+      this.labels[key] = { el, sub: el.querySelector('small')! };
+    }
 
-    root.append(this.intro, this.count, this.hud, this.result, this.flashEl);
+    root.append(this.intro, this.count, this.hud, this.result);
 
     for (const sel of ['.clock', '.dot.me', '.dot.rival', '.meter', '.meter-fill', '.meter-pct', '.boost', '.ring.closing', '.tag.me', '.tag.rival', '.zone-label', '.boost-btn']) {
       this.els[sel] = this.hud.querySelector(sel)!;
@@ -113,6 +135,9 @@ export class Hud {
     this.intro.classList.toggle('on', which === 'intro');
     this.count.classList.toggle('on', which === 'countdown' || which === 'hud');
     this.hud.classList.toggle('on', which === 'hud');
+    // During the countdown the HUD is laid out and painted while still transparent,
+    // so revealing it at "GO" doesn't cost a long frame.
+    this.hud.classList.toggle('primed', which === 'countdown');
     this.result.classList.toggle('on', which === 'result');
   }
 
@@ -123,16 +148,18 @@ export class Hud {
     }, 600);
   }
 
-  countWord(word: string, kind = '') {
-    const el = this.count.querySelector('.count-word') as HTMLElement;
-    el.textContent = word;
-    el.className = `count-word ${kind}`;
-    void el.offsetWidth;
-    el.classList.add('pop');
+  countWord(word: string) {
+    this.count.querySelectorAll<HTMLElement>('.count-word').forEach((el) => {
+      el.classList.remove('pop');
+      if (el.dataset.word === word) {
+        void el.offsetWidth;
+        el.classList.add('pop');
+      }
+    });
   }
 
   clearCount() {
-    (this.count.querySelector('.count-word') as HTMLElement).textContent = '';
+    this.count.querySelectorAll('.count-word').forEach((el) => el.classList.remove('pop'));
   }
 
   update(s: {
@@ -180,26 +207,29 @@ export class Hud {
   }
 
   boostFeedback(r: BoostResult, index: number, final: boolean) {
-    const label: Record<BoostGrade, string> = {
-      perfect: final ? 'FINAL PERFECT' : 'PERFECT BOOST',
-      good: 'GOOD BOOST',
-      miss: r.tapped ? 'TOO LATE' : 'MISSED',
-    };
     const sub =
       r.grade === 'miss' ? 'RIVAL GAINS GROUND' : r.grade === 'perfect' ? `MAX ENERGY · +${r.points}` : `+${r.points}`;
-    this.feedback.innerHTML = `<div class="fb ${r.grade}"><b>${label[r.grade]}</b><small>${sub}</small></div>`;
+    const key = r.grade === 'perfect' ? (final ? 'final' : 'perfect') : r.grade === 'good' ? 'good' : r.tapped ? 'late' : 'missed';
+    this.playLabel(key, sub);
     const pip = this.hud.querySelectorAll('.pips i')[index] as HTMLElement;
     pip.className = r.grade;
-    if (r.grade !== 'miss') this.flash(r.grade === 'perfect' ? 'red' : 'soft');
-    this.root.classList.remove('shake');
-    void this.root.offsetWidth;
-    if (r.grade === 'perfect') this.root.classList.add('shake');
+    // Flash and shake happen in the 3D post chain and camera rig. Full-screen CSS effects
+    // were redrawn at native resolution (7.5M px on a 1.5x 1440p laptop) and caused hitches.
   }
 
   /** Early tap inside a zone: forgiven, but tell the player to hold. */
   early() {
-    this.feedback.innerHTML = `<div class="fb early"><b>WAIT FOR IT</b><small>TAP WHEN THE RINGS MEET</small></div>`;
+    this.playLabel('early', 'TAP WHEN THE RINGS MEET');
     this.nudge();
+  }
+
+  private playLabel(key: string, sub: string) {
+    for (const [k, l] of Object.entries(this.labels)) if (k !== key) l.el.classList.remove('play');
+    const l = this.labels[key];
+    if (l.sub.textContent !== sub) l.sub.textContent = sub;
+    l.el.classList.remove('play');
+    void l.el.offsetWidth;
+    l.el.classList.add('play');
   }
 
   /** Brief wrong-moment cue when the player taps outside a Boost Zone. */
@@ -214,19 +244,13 @@ export class Hud {
     this.els['.zone-label'].textContent = final ? 'FINAL BOOST' : 'BOOST ZONE';
   }
 
-  flash(kind: 'red' | 'soft' | 'white') {
-    this.flashEl.className = `flash ${kind}`;
-    void this.flashEl.offsetWidth;
-    this.flashEl.classList.add('go');
-  }
-
   resetPips() {
     this.hud.querySelectorAll('.pips i').forEach((p) => ((p as HTMLElement).className = ''));
-    this.feedback.innerHTML = '';
+    this.clearFeedback();
   }
 
   clearFeedback() {
-    this.feedback.innerHTML = '';
+    for (const l of Object.values(this.labels)) l.el.classList.remove('play');
   }
 
   showResult(v: ResultView) {

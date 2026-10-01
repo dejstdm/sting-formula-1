@@ -51,6 +51,14 @@ const ledColor = mix(vec3(0.55, 0.6, 0.75), vec3(STING_RED.r, STING_RED.g, STING
 export class Track {
   group = new THREE.Group();
   startLights: ReturnType<typeof uniform<'float'>>[] = [];
+  /** Benchmark hooks: the road and its material variants, plus tagged object groups. */
+  road!: THREE.Mesh;
+  roadMaterials: Record<'full' | 'noReflection' | 'flat', THREE.Material> = {} as any;
+  tagged: Record<string, THREE.Object3D[]> = {};
+
+  private tag(name: string, ...objs: THREE.Object3D[]) {
+    (this.tagged[name] ??= []).push(...objs);
+  }
   private wheel!: THREE.Object3D;
 
   constructor(scene: THREE.Scene) {
@@ -93,6 +101,7 @@ export class Track {
     sky.frustumCulled = false;
     sky.renderOrder = -10;
     this.group.add(sky);
+    this.tag('sky', sky);
 
     const ground = new THREE.Mesh(
       new THREE.PlaneGeometry(2400, 2400),
@@ -127,6 +136,10 @@ export class Track {
     mat.colorNode = col;
     mat.roughnessNode = mix(float(0.62), float(0.12), wet).sub(grain.mul(0.08));
     mat.metalnessNode = float(0.05);
+    const noReflection = mat.clone();
+    noReflection.colorNode = col;
+    noReflection.roughnessNode = mat.roughnessNode;
+    noReflection.metalnessNode = mat.metalnessNode;
 
     if (quality.reflections) {
       const reflection = reflector({ resolutionScale: quality.reflectionScale });
@@ -147,6 +160,12 @@ export class Track {
     road.rotation.x = -Math.PI / 2;
     road.position.set(MID, 0, 0);
     this.group.add(road);
+    this.road = road;
+    this.roadMaterials = {
+      full: mat,
+      noReflection,
+      flat: new THREE.MeshStandardNodeMaterial({ color: 0x0b0b0e, roughness: 0.4 }),
+    };
 
     // Run-off: dark astroturf with a faint painted stripe.
     const runoff = new THREE.MeshStandardNodeMaterial({ roughness: 0.9 });
@@ -263,6 +282,7 @@ export class Track {
     }
     poles.count = heads.count = cones.count = i;
     cones.renderOrder = 5;
+    this.tag('lightShafts', cones);
     this.group.add(poles, heads, cones);
   }
 
@@ -304,6 +324,7 @@ export class Track {
       const rise = 11;
       const slope = Math.hypot(depth, rise);
       const stand = new THREE.Mesh(new THREE.PlaneGeometry(len, slope), crowd);
+      this.tag('crowd', stand);
       stand.position.set(cx, 1.5 + rise / 2, -(13 + depth / 2));
       // Plane faces +Z; tilt it back so the top row sits further from the track.
       stand.rotation.x = -Math.atan2(depth, rise);
@@ -460,6 +481,7 @@ export class Track {
     mat.emissiveNode = tint.mul(win.mul(lit).mul(facade.select(float(2.2), float(0))));
 
     const mesh = new THREE.InstancedMesh(geo, mat, n);
+    this.tag('skyline', mesh);
     const m = new THREE.Matrix4();
     const rnd = mulberry(4);
     for (let i = 0; i < n; i++) {

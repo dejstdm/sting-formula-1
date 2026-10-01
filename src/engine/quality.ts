@@ -16,6 +16,7 @@ export const quality = {
    * Override with ?px=3000000.
    */
   pixelBudget: Number(params.get('px')) || (tier === 'high' ? 2_200_000 : tier === 'mid' ? 1_300_000 : 700_000),
+  customBudget: params.has('px'),
   /** Scale resolution down when frames run slow, back up when there's headroom. Off with ?fixedres. */
   adaptive: !params.has('fixedres'),
   reflections: tier !== 'low',

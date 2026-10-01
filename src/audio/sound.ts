@@ -24,8 +24,12 @@ export class Sound {
     return !!this.ctx;
   }
 
-  /** Must run inside a user gesture (the "Tap to race" tap). */
-  unlock() {
+  /**
+   * Build the audio graph during loading. Creating an AudioContext can block for a few
+   * hundred ms while the OS opens the audio device (measured ~290 ms on Windows), so it
+   * must not happen inside the "Tap to race" handler. It starts suspended; unlock() resumes it.
+   */
+  prepare() {
     if (!this.ctx) {
       this.ctx = new AudioContext({ latencyHint: 'interactive' });
       const comp = this.ctx.createDynamicsCompressor();
@@ -61,9 +65,19 @@ export class Sound {
         b = 0.97 * b + 0.03 * (Math.random() * 2 - 1);
         d[i] = (Math.random() * 2 - 1) * 0.6 + b * 3;
       }
+    }
+  }
+
+  private ambienceStarted = false;
+
+  /** Must run inside a user gesture (the "Tap to race" tap): resumes the prepared context. */
+  unlock() {
+    this.prepare();
+    if (this.ctx.state !== 'running') this.ctx.resume();
+    if (!this.ambienceStarted) {
+      this.ambienceStarted = true;
       this.startAmbience();
     }
-    if (this.ctx.state !== 'running') this.ctx.resume();
   }
 
   setMuted(m: boolean) {

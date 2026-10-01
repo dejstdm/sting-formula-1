@@ -130,7 +130,11 @@ class SpeedLines {
   intensity = uniform(0);
   private seeds: Float32Array;
   private m = new THREE.Matrix4();
-  private q = new THREE.Quaternion();
+  // Reused every frame: allocating here caused garbage-collection pauses mid-race.
+  private qFlat = new THREE.Quaternion();
+  private qUp = new THREE.Quaternion().setFromEuler(new THREE.Euler(Math.PI * 0.5, 0, 0));
+  private p = new THREE.Vector3();
+  private s = new THREE.Vector3();
 
   constructor(count: number) {
     const geo = new THREE.PlaneGeometry(1, 1);
@@ -160,8 +164,9 @@ class SpeedLines {
       if (s[i * 4] < -25) s[i * 4] += 60;
       const x = focusX + s[i * 4];
       const len = 1.5 + speed * 0.5 * s[i * 4 + 3];
-      this.q.setFromEuler(new THREE.Euler((i % 2) * Math.PI * 0.5, 0, 0));
-      this.m.compose(new THREE.Vector3(x, 0.4 + s[i * 4 + 1], s[i * 4 + 2]), this.q, new THREE.Vector3(len, 0.03, 1));
+      this.p.set(x, 0.4 + s[i * 4 + 1], s[i * 4 + 2]);
+      this.s.set(len, 0.03, 1);
+      this.m.compose(this.p, i % 2 ? this.qUp : this.qFlat, this.s);
       this.mesh.setMatrixAt(i, this.m);
     }
     this.mesh.instanceMatrix.needsUpdate = true;

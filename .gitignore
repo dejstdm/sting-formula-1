@@ -1,0 +1,31 @@
+# Dependencies and build output
+node_modules
+dist
+.vite
+
+# Logs
+*.log
+npm-debug.log*
+
+# Env files
+.env
+.env.*
+!.env.example
+
+# Editors and OS
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+Thumbs.db
+*.swp
+
+# Office lock files (created while a deck is open)
+~$*
+
+# Client source material: confidential and large (the deck alone is 24 MB).
+# Keep it out of the repo and share it through the project drive instead.
+*.pptx
+*.ppt
+*.key
+*.pdf

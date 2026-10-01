@@ -21,7 +21,9 @@ node scripts/sim.ts  # prints win/lose for all 27 Boost combinations
 | `?auto=PPG` | Plays itself: P = perfect, G = good, M = miss. Use for demos and QA. |
 | `?q=low\|mid\|high` | Quality tier. Defaults to `high` on desktop and `mid` on touch devices. |
 | `?webgl` | Forces the WebGL2 backend instead of WebGPU. |
-| `?debug` | Shows the backend, fps and race state. |
+| `?px=3000000` | Pixel budget per frame (default 2.2M desktop, 1.3M mobile). Resolution is capped to fit it. |
+| `?fixedres` | Turns off automatic resolution scaling. |
+| `?debug` | Shows the backend, rendered megapixels, resolution scale, fps and race state. |
 | `?skip` | Skips the can intro and goes straight to the start lights. |
 | `?capture` | Allows large frame steps, so slow headless browsers keep real-time pacing. |
 

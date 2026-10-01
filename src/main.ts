@@ -381,7 +381,8 @@ const tmp2 = new THREE.Vector3();
 
 function frame() {
   const now = performance.now();
-  let dt = Math.min(maxStep, (now - lastFrame) / 1000);
+  const rawDt = (now - lastFrame) / 1000;
+  let dt = Math.min(maxStep, rawDt);
   lastFrame = now;
   stateT += dt;
 
@@ -459,10 +460,11 @@ function frame() {
   updateCamera(dt);
   if (state === 'race' || state === 'countdown') updateHud();
   if (debugEl) {
-    debugEl.textContent = `${stage.backendName} · q=${quality.tier}\nfps ${(1 / dt).toFixed(0)}\nt ${race.t.toFixed(2)}  E ${race.energy.toFixed(0)}\nP ${race.player.toFixed(1)}  R ${race.rival.toFixed(1)}\nstate ${state}`;
+    debugEl.textContent = `${stage.backendName} · q=${quality.tier}\n${(stage.renderPixels / 1e6).toFixed(2)} Mpx · res ${(stage.resScale * 100).toFixed(0)}%\nfps ${(1 / dt).toFixed(0)}\nt ${race.t.toFixed(2)}  E ${race.energy.toFixed(0)}\nP ${race.player.toFixed(1)}  R ${race.rival.toFixed(1)}\nstate ${state}`;
   }
 
   stage.render();
+  stage.adapt(rawDt);
 }
 
 function updateLaunch(dt: number) {

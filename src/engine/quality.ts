@@ -10,8 +10,16 @@ export const quality = {
   tier,
   forceWebGL: params.has('webgl'),
   maxDpr: tier === 'high' ? 2 : tier === 'mid' ? 1.5 : 1,
+  /**
+   * Max rendered pixels per frame. Every post effect is a full-screen pass, so cost
+   * scales with pixels: a full-screen 1080p window at 2x DPR is ~8.3M px, a phone ~0.7M.
+   * Override with ?px=3000000.
+   */
+  pixelBudget: Number(params.get('px')) || (tier === 'high' ? 2_200_000 : tier === 'mid' ? 1_300_000 : 700_000),
+  /** Scale resolution down when frames run slow, back up when there's headroom. Off with ?fixedres. */
+  adaptive: !params.has('fixedres'),
   reflections: tier !== 'low',
-  reflectionScale: tier === 'high' ? 0.5 : 0.3,
+  reflectionScale: tier === 'high' ? 0.4 : 0.3,
   speedBlur: tier !== 'low',
   aberration: tier !== 'low',
   fxaa: tier !== 'low',

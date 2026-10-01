@@ -21,6 +21,7 @@ import { chromaticAberration } from 'three/addons/tsl/display/ChromaticAberratio
 import { radialBlur } from 'three/addons/tsl/display/radialBlur.js';
 import { fxaa } from 'three/addons/tsl/display/FXAANode.js';
 import { quality } from './quality';
+import { ResolutionGovernor } from './governor';
 
 /**
  * Everything the game animates on the post stack lives here as a uniform,
@@ -51,6 +52,8 @@ export class Stage {
   pipeline!: THREE.RenderPipeline;
   /** Horizontal field of view the camera rig asks for; vertical FOV is derived per aspect. */
   hFov = 70;
+  /** Dynamic resolution: 1 = full budget, lowered when frames are slow. */
+  private governor = new ResolutionGovernor();
 
   constructor(canvas: HTMLCanvasElement) {
     this.renderer = new THREE.WebGPURenderer({
@@ -59,7 +62,6 @@ export class Stage {
       powerPreference: 'high-performance',
       forceWebGL: quality.forceWebGL,
     });
-    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, quality.maxDpr));
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
     this.renderer.toneMappingExposure = 1.0;
     this.renderer.setClearColor(0x05040a);
@@ -128,9 +130,30 @@ export class Stage {
     this.pipeline.outputNode = out;
   }
 
+  /** Pixel ratio that fits the pixel budget for this window, times the dynamic scale. */
+  private pixelRatio(w: number, h: number) {
+    const fit = Math.sqrt(quality.pixelBudget / Math.max(1, w * h));
+    return Math.max(0.5, Math.min(window.devicePixelRatio, quality.maxDpr, fit) * this.resScale);
+  }
+
+  get renderPixels() {
+    const r = this.renderer.getPixelRatio();
+    return Math.round(window.innerWidth * r) * Math.round(window.innerHeight * r);
+  }
+
+  get resScale() {
+    return this.governor.scale;
+  }
+
+  /** Called every frame with the real (unclamped) frame time. */
+  adapt(dt: number) {
+    if (quality.adaptive && this.governor.step(dt) !== null) this.resize();
+  }
+
   resize() {
     const w = window.innerWidth;
     const h = window.innerHeight;
+    this.renderer.setPixelRatio(this.pixelRatio(w, h));
     this.renderer.setSize(w, h, false);
     this.camera.aspect = w / h;
     this.applyFov();

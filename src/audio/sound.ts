@@ -3,6 +3,16 @@
 
 type Grade = 'perfect' | 'good' | 'miss';
 
+const MUTE_KEY = 'stingboost.muted';
+
+function readMuted() {
+  try {
+    return localStorage.getItem(MUTE_KEY) === '1';
+  } catch {
+    return false;
+  }
+}
+
 export class Sound {
   ctx!: AudioContext;
   private master!: GainNode;
@@ -18,7 +28,8 @@ export class Sound {
   private timer = 0;
   private heartbeatT = 0;
   private energy = 1;
-  muted = false;
+  /** Remembered between visits; read before the audio graph exists. */
+  muted = readMuted();
 
   get ready() {
     return !!this.ctx;
@@ -38,7 +49,7 @@ export class Sound {
       comp.attack.value = 0.004;
       comp.release.value = 0.2;
       this.master = this.ctx.createGain();
-      this.master.gain.value = 0.9;
+      this.master.gain.value = this.muted ? 0 : 0.9;
       this.master.connect(comp).connect(this.ctx.destination);
 
       this.musicFilter = this.ctx.createBiquadFilter();
@@ -82,6 +93,11 @@ export class Sound {
 
   setMuted(m: boolean) {
     this.muted = m;
+    try {
+      localStorage.setItem(MUTE_KEY, m ? '1' : '0');
+    } catch {
+      /* private mode: preference just isn't remembered */
+    }
     if (this.master) this.master.gain.setTargetAtTime(m ? 0 : 0.9, this.ctx.currentTime, 0.05);
   }
 

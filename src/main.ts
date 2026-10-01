@@ -45,9 +45,20 @@ const hud = new Hud(document.getElementById('ui')!, name);
 
 const loader = document.createElement('div');
 loader.className = 'loader';
-loader.innerHTML = `<div><p>GET. SET. STING.</p><div class="bar"><i></i></div><small>CHARGING</small></div>`;
+// Spinner instead of a progress bar: some loading steps (shader compile, GPU probe) are single
+// long tasks, so a bar sat still and looked frozen. A CSS transform animation keeps spinning
+// on the compositor thread even while the page is busy.
+loader.innerHTML = `<div class="loader-box">
+  <img class="loader-logo" src="./textures/sting-logo.png" alt="Sting" />
+  <div class="loader-spinner" role="progressbar" aria-label="Loading"></div>
+  <p>GET. SET. STING.</p>
+  <small class="step">CHARGING</small>
+</div>`;
 document.body.append(loader);
-const setProgress = (k: number) => ((loader.querySelector('.bar i') as HTMLElement).style.width = `${k * 100}%`);
+const setProgress = (k: number) => {
+  const step = k < 0.3 ? 'CHARGING' : k < 0.6 ? 'LOADING THE TRACK' : k < 0.9 ? 'PREPARING GRAPHICS' : 'TUNING FOR YOUR DEVICE';
+  (loader.querySelector('.step') as HTMLElement).textContent = step;
+};
 
 let state: State = 'loading';
 let race = new Race();
@@ -230,6 +241,7 @@ async function boot() {
     for (const o of track.tagged.lightShafts ?? []) o.visible = level < 2;
     track.road.material = level < 3 ? track.roadMaterials.full : track.roadMaterials.noReflection;
   };
+  setProgress(0.95);
   if (quality.adaptive && !params.has('bench')) await pickStartQuality();
   setProgress(1);
 
@@ -244,8 +256,11 @@ async function boot() {
   wireInput();
   stage.startMeasuring();
   stage.renderer.setAnimationLoop(frame);
-  window.setTimeout(() => loader.classList.add('done'), 150);
-  window.setTimeout(() => loader.remove(), 900);
+  // ?loader keeps the loading screen up, to review its animation.
+  if (!params.has('loader')) {
+    window.setTimeout(() => loader.classList.add('done'), 150);
+    window.setTimeout(() => loader.remove(), 900);
+  }
   if (params.has('bench')) {
     startBench();
     return;
@@ -359,6 +374,7 @@ function wireInput() {
       /* user cancelled */
     }
   };
+  hud.setSoundUi(sound.muted);
   hud.onMute = () => {
     sound.setMuted(!sound.muted);
     return sound.muted;

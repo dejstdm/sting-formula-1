@@ -6,7 +6,18 @@ const html = (s: string) => {
   return t.content.firstElementChild as HTMLElement;
 };
 
-const BOLT = `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M13.5 1 4 13.5h6.2L8.8 23 20 9.6h-6.4z"/></svg>`;
+/** The Sting wordmark, cut from the client's proposal deck (the only brand asset we have). */
+const LOGO = `<img class="logo" src="./textures/sting-logo.png" alt="Sting" draggable="false" />`;
+
+const ICON = {
+  soundOn: `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9v6h4l5 4V5L8 9H4z"/><path d="M16 8.5a5 5 0 0 1 0 7M18.5 6a8.5 8.5 0 0 1 0 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>`,
+  soundOff: `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9v6h4l5 4V5L8 9H4z"/><path d="m16 9 6 6m0-6-6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>`,
+  enter: `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>`,
+  exit: `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>`,
+};
+
+const fsEnabled = () => !!(document.fullscreenEnabled || (document as any).webkitFullscreenEnabled);
+const fsElement = () => document.fullscreenElement || (document as any).webkitFullscreenElement;
 
 export interface ResultView {
   name: string;
@@ -36,14 +47,16 @@ export class Hud {
   onBoost?: () => void;
   onAgain?: () => void;
   onShare?: () => void;
+  /** Toggle sound; returns the new muted state. */
   onMute?: () => boolean;
+  private controls: HTMLElement;
 
   constructor(root: HTMLElement, name: string) {
     this.root = root;
 
     this.intro = html(`
       <section class="screen intro">
-        <header class="brandline"><span class="bolt">${BOLT}</span>GET. SET. STING.</header>
+        <header class="brandline">${LOGO}<span>GET. SET. STING.</span></header>
         <div class="intro-title">
           <p class="kicker">PACK DETECTED · ENERGY 100%</p>
           <h1><span>STING</span><span class="gold">CHARGED</span></h1>
@@ -51,7 +64,8 @@ export class Hud {
         <div class="intro-foot">
           <p class="matchup"><b>${name}</b> vs. RIVAL</p>
           <button class="cta" type="button"><span>TAP TO RACE</span></button>
-          <p class="hint">Sound on · ~15 seconds · 3 Sting Boosts</p>
+          <button class="sound-pill" type="button" aria-pressed="true"></button>
+          <p class="hint">~15 seconds · 3 Sting Boosts</p>
         </div>
       </section>`);
 
@@ -84,13 +98,20 @@ export class Hud {
           <div class="ring target"></div>
           <div class="ring closing"></div>
           <button class="boost-btn" type="button" aria-label="Sting Boost">
-            <span class="bolt">${BOLT}</span><b>STING</b><small>BOOST</small>
+            ${LOGO}<small>BOOST</small>
           </button>
           <div class="pips"><i></i><i></i><i></i></div>
         </div>
         <div class="feedback"></div>
-        <button class="mute" type="button" aria-label="Toggle sound">♪</button>
       </section>`);
+
+    // Always-available corner controls: sound and fullscreen. They sit outside the HUD
+    // so tapping them never counts as a Boost.
+    this.controls = html(`
+      <div class="controls">
+        <button class="ctl sound" type="button"></button>
+        ${fsEnabled() ? `<button class="ctl fullscreen" type="button" aria-label="Fullscreen">${ICON.enter}</button>` : ''}
+      </div>`);
 
     this.result = html(`<section class="screen result"></section>`);
     this.feedback = this.hud.querySelector('.feedback')!;
@@ -108,7 +129,7 @@ export class Hud {
       this.labels[key] = { el, sub: el.querySelector('small')! };
     }
 
-    root.append(this.intro, this.count, this.hud, this.result);
+    root.append(this.intro, this.count, this.hud, this.result, this.controls);
 
     for (const sel of ['.clock', '.dot.me', '.dot.rival', '.meter', '.meter-fill', '.meter-pct', '.boost', '.ring.closing', '.tag.me', '.tag.rival', '.zone-label', '.boost-btn']) {
       this.els[sel] = this.hud.querySelector(sel)!;
@@ -120,18 +141,47 @@ export class Hud {
     });
     // Whole screen is the Boost button during play: one thumb, anywhere.
     this.hud.addEventListener('pointerdown', (e) => {
-      if ((e.target as HTMLElement).closest('.mute')) return;
       e.preventDefault();
       this.onBoost?.();
     });
-    this.hud.querySelector('.mute')!.addEventListener('pointerdown', (e) => {
+
+    const toggleSound = (e: Event) => {
       e.stopPropagation();
-      const muted = this.onMute?.();
-      (e.currentTarget as HTMLElement).classList.toggle('off', !!muted);
+      this.setSoundUi(!!this.onMute?.());
+    };
+    this.controls.querySelector('.sound')!.addEventListener('click', toggleSound);
+    this.intro.querySelector('.sound-pill')!.addEventListener('click', toggleSound);
+
+    const fs = this.controls.querySelector('.fullscreen');
+    fs?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const doc = document as any;
+      const el = document.documentElement as any;
+      if (fsElement()) (document.exitFullscreen ?? doc.webkitExitFullscreen)?.call(document);
+      else (el.requestFullscreen ?? el.webkitRequestFullscreen)?.call(el, { navigationUI: 'hide' })?.catch?.(() => {});
     });
+    const onFs = () => {
+      if (fs) fs.innerHTML = fsElement() ? ICON.exit : ICON.enter;
+      fs?.setAttribute('aria-label', fsElement() ? 'Exit fullscreen' : 'Fullscreen');
+    };
+    document.addEventListener('fullscreenchange', onFs);
+    document.addEventListener('webkitfullscreenchange', onFs);
+  }
+
+  /** Reflect the sound state on both the corner button and the start-screen pill. */
+  setSoundUi(muted: boolean) {
+    const btn = this.controls.querySelector('.sound') as HTMLElement;
+    btn.innerHTML = muted ? ICON.soundOff : ICON.soundOn;
+    btn.setAttribute('aria-label', muted ? 'Sound off. Turn sound on' : 'Sound on. Turn sound off');
+    btn.classList.toggle('off', muted);
+    const pill = this.intro.querySelector('.sound-pill') as HTMLElement;
+    pill.innerHTML = `${muted ? ICON.soundOff : ICON.soundOn}<span>SOUND ${muted ? 'OFF' : 'ON'}</span>`;
+    pill.setAttribute('aria-pressed', String(!muted));
+    pill.classList.toggle('off', muted);
   }
 
   show(which: 'intro' | 'countdown' | 'hud' | 'result' | 'none') {
+    this.root.dataset.screen = which;
     this.intro.classList.toggle('on', which === 'intro');
     this.count.classList.toggle('on', which === 'countdown' || which === 'hud');
     this.hud.classList.toggle('on', which === 'hud');

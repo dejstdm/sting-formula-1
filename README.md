@@ -26,6 +26,7 @@ node scripts/sim.ts  # prints win/lose for all 27 Boost combinations
 | `?bench` | Benchmark: holds a race view and times effect and resolution combinations. The results table shows on screen. |
 | `?debug` | Shows the backend, rendered megapixels, resolution scale, fps and race state. |
 | `?skip` | Skips the can intro and goes straight to the start lights. |
+| `?loader` | Keeps the loading screen up, to review its animation. |
 | `?capture` | Allows large frame steps, so slow headless browsers keep real-time pacing. |
 
 Space or Enter does everything, which covers the Grand Prix big-screen version: a USB arcade button that sends a key press works out of the box.

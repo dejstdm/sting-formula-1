@@ -90,25 +90,45 @@ body {
   pointer-events: none;
 }
 
-.loader .bar {
-  width: min(240px, 60vw);
-  height: 3px;
-  margin-top: 18px;
-  background: rgba(255, 255, 255, 0.12);
-  overflow: hidden;
+.loader-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
 
-.loader .bar i {
-  display: block;
-  height: 100%;
-  width: 0;
-  background: linear-gradient(90deg, var(--red), var(--gold));
-  transition: width 0.3s ease;
+.loader-logo {
+  width: min(260px, 64vw);
+  height: auto;
+  margin-bottom: 30px;
+  animation: charge 1.6s ease-in-out infinite;
+  will-change: transform, opacity;
+}
+
+/* Named loader-spinner on purpose: the in-race timing rings own the .ring class. */
+.loader-spinner {
+  width: 46px;
+  height: 46px;
+  margin-bottom: 22px;
+  border-radius: 50%;
+  background: conic-gradient(from 0deg, rgba(227, 0, 43, 0) 0deg, var(--red) 230deg, var(--gold) 345deg, #fff 360deg);
+  -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 4px), #000 calc(100% - 3px));
+  mask: radial-gradient(farthest-side, transparent calc(100% - 4px), #000 calc(100% - 3px));
+  animation: loader-spin 0.9s linear infinite;
+  will-change: transform;
+}
+
+@keyframes loader-spin {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes charge {
+  50% { transform: scale(1.04); opacity: 0.85; }
 }
 
 .loader p {
   margin: 0;
-  font-size: 28px;
+  font-size: 18px;
+  letter-spacing: 0.18em;
   text-align: center;
 }
 
@@ -150,8 +170,9 @@ body {
   color: var(--gold);
 }
 
-.brandline .bolt {
-  font-size: 18px;
+.brandline .logo {
+  height: 30px;
+  width: auto;
 }
 
 .intro-title {
@@ -518,18 +539,10 @@ body {
   transition: opacity 0.2s, filter 0.2s, transform 0.15s;
 }
 
-.boost-btn .bolt {
-  font-size: 30px;
-  color: var(--gold);
-  margin-bottom: -2px;
-}
-
-.boost-btn b {
-  font-family: var(--display);
-  font-weight: 400;
-  font-size: 26px;
-  letter-spacing: 0.06em;
-  line-height: 1;
+.boost-btn .logo {
+  width: 78%;
+  height: auto;
+  margin: 4px 0 2px;
 }
 
 .boost-btn small {
@@ -705,23 +718,75 @@ body {
   100% { opacity: 0; transform: scale(0.95) translateY(-24px) skewX(-8deg); }
 }
 
-.mute {
+
+/* --------------------------------------------------- corner controls */
+
+.controls {
   position: absolute;
-  right: 14px;
-  bottom: calc(40px + var(--safe-b));
+  top: calc(12px + var(--safe-t));
+  right: 12px;
+  display: flex;
+  gap: 8px;
+  pointer-events: auto;
+  transition: top 0.3s ease, opacity 0.3s ease;
+}
+
+#ui[data-screen='hud'] .controls,
+#ui[data-screen='countdown'] .controls {
+  top: calc(72px + var(--safe-t));
+}
+
+#ui[data-screen='none'] .controls {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.ctl {
   width: 40px;
   height: 40px;
-  border-radius: 50%;
-  border: 1px solid rgba(255, 255, 255, 0.25);
+  padding: 8px;
+  border: 0;
+  background: none;
+  color: #fff;
+  cursor: pointer;
+}
+
+.ctl svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  fill: currentColor;
+}
+
+.ctl.off {
+  color: rgba(255, 255, 255, 0.55);
+}
+
+.sound-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.3);
   background: rgba(0, 0, 0, 0.4);
   color: #fff;
-  font-size: 18px;
+  font-family: var(--display);
+  font-size: 15px;
+  letter-spacing: 0.14em;
+  cursor: pointer;
   pointer-events: auto;
 }
 
-.mute.off {
-  opacity: 0.4;
-  text-decoration: line-through;
+.sound-pill svg {
+  width: 18px;
+  height: 18px;
+  fill: currentColor;
+}
+
+.sound-pill.off {
+  color: rgba(255, 255, 255, 0.6);
+  border-style: dashed;
 }
 
 /* ---------------------------------------------------------------- result */
@@ -928,10 +993,6 @@ body {
     transform: none;
     width: 140px;
     height: 140px;
-  }
-  .mute {
-    bottom: auto;
-    top: calc(70px + var(--safe-t));
   }
   .result {
     place-items: center end;

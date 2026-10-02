@@ -6,6 +6,7 @@ import './ui/style.css';
 import { Race, RACE, type BoostResult, type BoostWindow } from './game/race';
 import { Hud } from './ui/hud';
 import { sound } from './audio/sound';
+import { publicUrl } from './publicUrl';
 import { World, loadArt, type Pose, type Scene, type View } from './render/world';
 
 const params = new URLSearchParams(location.search);
@@ -27,6 +28,7 @@ const PIXEL_BUDGET = params.has('px') ? Number(params.get('px')) : 1_300_000;
 type State = 'loading' | 'intro' | 'launch' | 'countdown' | 'race' | 'finish' | 'result';
 
 const stage = document.getElementById('stage')!;
+document.body.style.setProperty('--page-bg', `url(${publicUrl('sprites/page-bg.webp')})`);
 const canvas = document.getElementById('scene') as HTMLCanvasElement;
 const ctx = canvas.getContext('2d', { alpha: false })!;
 const hud = new Hud(document.getElementById('ui')!, name);
@@ -50,7 +52,14 @@ let visRival = 0;
 let playerCoast = 0;
 let rivalCoast = 0;
 let car: number | null = null;
+let carHeight = 0;
+let carLanded = false;
 let carPassed = false;
+let shake = 0;
+/** Seconds of near-freeze left after a Perfect hit. */
+let hitstop = 0;
+/** Game-time multiplier for the runners after the line (slow motion). */
+let cinematicScale = 1;
 let win: boolean | null = null;
 let finishMargin = 0;
 let launchFlashed = false;
@@ -77,8 +86,9 @@ function scene(): Scene {
     cam: visPlayer - CAM_BACK,
     player: visPlayer,
     rival: visRival,
-    playerSpeed: state === 'race' ? race.playerSpeed * race.timeScale : playerCoast,
-    rivalSpeed: state === 'race' ? RACE.rivalSpeed * race.timeScale : rivalCoast,
+    // World time is already scaled (zones, hit-stop, slow motion), so these are plain speeds.
+    playerSpeed: state === 'race' ? race.playerSpeed : playerCoast,
+    rivalSpeed: state === 'race' ? RACE.rivalSpeed : rivalCoast,
     playerPose,
     rivalPose,
     energy: energyView,
@@ -86,6 +96,9 @@ function scene(): Scene {
     zoneAt: w && state === 'race' ? race.player + race.playerSpeed * (w.target - race.t) : null,
     zoneHeat: w ? Math.min(1, race.zoneProgress()) : 0,
     car,
+    carHeight,
+    shake,
+    zone: state === 'race' && w !== null,
     flash,
   };
 }
@@ -123,7 +136,12 @@ function resetRace() {
   playerCoast = 0;
   rivalCoast = 0;
   car = null;
+  carHeight = 0;
+  carLanded = false;
   carPassed = false;
+  shake = 0;
+  hitstop = 0;
+  cinematicScale = 1;
   win = null;
   finishMargin = 0;
   hud.resetPips();
@@ -246,16 +264,20 @@ function onBoost(r: BoostResult, w: BoostWindow) {
   hud.boostFeedback(r, w.index, final);
   sound.boost(r.grade, w.index);
   if (r.grade === 'miss') {
-    vibrate(80);
+    vibrate(90);
+    shake = 0.35;
     return;
   }
   sound.addLayer();
   const perfect = r.grade === 'perfect';
   // Each Boost lands harder than the last, so the third one feels like the big one.
   const strength = perfect ? 0.55 + w.index * 0.2 + (final ? 0.15 : 0) : 0.35;
-  flash = perfect ? (final ? 0.75 : 0.4) : 0.2;
+  flash = perfect ? (final ? 0.9 : 0.55) : 0.3;
+  shake = perfect ? (final ? 1 : 0.6) : 0.3;
+  // A Perfect freezes the moment for a beat, as in concept 1.
+  if (perfect) hitstop = final ? 0.12 : 0.07;
   world.boost(strength);
-  vibrate(perfect ? [20, 30, 60] : 30);
+  vibrate(perfect ? [25, 30, 70] : 35);
 }
 
 function onFinish(winner: 'player' | 'rival') {
@@ -270,10 +292,12 @@ function onFinish(winner: 'player' | 'rival') {
   hud.clearFeedback();
   hud.show('none');
   if (win) {
-    // The F1 car comes up from behind the camera and sweeps past the winner.
-    car = visPlayer - CAM_BACK - 0.5;
+    // The F1 car drops out of the sky just behind the winner, lands, and sweeps past.
+    car = visPlayer - 1.4;
+    carHeight = 7;
+    carLanded = false;
     carPassed = false;
-    sound.flyby(0.35, 1.1);
+    sound.flyby(1.0, 1.6);
   } else {
     sound.lose();
   }
@@ -298,8 +322,14 @@ function frame(now: number) {
 
   if (state === 'launch') updateLaunch();
   if (state === 'countdown') updateCountdown();
+  // Game time: slows inside Boost Zones, nearly freezes for a beat on a Perfect.
+  let scale = state === 'race' ? race.timeScale : cinematicScale;
+  if (hitstop > 0) {
+    hitstop -= dt;
+    scale *= 0.06;
+  }
   if (state === 'race') {
-    const gdt = dt * race.timeScale;
+    const gdt = dt * scale;
     race.step(gdt);
     autoTap(gdt);
     if (state === 'race') {
@@ -307,16 +337,17 @@ function frame(now: number) {
       visRival = race.rival;
     }
   }
-  if (state === 'finish' || state === 'result') updateFinish(dt);
+  if (state === 'finish' || state === 'result') updateFinish(dt, dt * scale);
 
   const targetEnergy = state === 'race' ? race.energy / 100 : win === false ? 0.45 : 1;
   energyView = damp(energyView, targetEnergy, 8, dt);
   flash = damp(flash, 0, 4.5, dt);
+  shake = damp(shake, 0, 6, dt);
   if (state === 'race') sound.setEnergy(energyView);
 
   resize();
   const s = scene();
-  world.update(dt, s);
+  world.update(state === 'race' || state === 'finish' ? dt * scale : dt, s);
   world.draw(ctx, s);
   if (state === 'race' || state === 'countdown') {
     hud.update({
@@ -358,24 +389,51 @@ function updateCountdown() {
   }
 }
 
-function updateFinish(dt: number) {
-  playerCoast = Math.max(0, playerCoast - dt * 7);
-  rivalCoast = Math.max(0, rivalCoast - dt * 7);
-  visPlayer += playerCoast * dt;
-  visRival += rivalCoast * dt;
+function updateFinish(dt: number, gdt: number) {
+  const t = stateT;
+  // Runners coast to a stop in game time, so slow motion slows them too.
+  playerCoast = Math.max(0, playerCoast - gdt * 7);
+  rivalCoast = Math.max(0, rivalCoast - gdt * 7);
+  visPlayer += playerCoast * gdt;
+  visRival += rivalCoast * gdt;
+
+  if (!win) {
+    cinematicScale = t < 1 ? 0.4 : Math.min(1, 0.4 + (t - 1) * 1.2);
+    if (state === 'finish' && t > 2.2) showResult();
+    return;
+  }
+
+  // Victory: bullet time for the runners while the car plays out in real time.
+  cinematicScale = t < 0.25 ? 1 - t * 3.3 : t < 2.6 ? 0.18 : Math.min(1, 0.18 + (t - 2.6) * 1.4);
   if (car !== null) {
-    car += dt * 34;
-    if (!carPassed && car > visPlayer) {
+    if (t < 0.7) {
+      const k = t / 0.7;
+      carHeight = 7 * (1 - k * k);
+    } else if (!carLanded) {
+      carLanded = true;
+      carHeight = 0;
+      shake = 0.9;
+      flash = 0.6;
+      const p = world.carScreen(car, visPlayer - CAM_BACK);
+      world.burstAt(p.x, p.y - 10, 2.6 * p.k, 0.8);
+      vibrate([30, 20, 50]);
+    } else {
+      // Launch off the landing spot and accelerate up the track.
+      const k = t - 0.7;
+      car += dt * (14 + 46 * k);
+    }
+    if (carLanded && !carPassed && car > visPlayer) {
       carPassed = true;
       sound.victory();
-      flash = 0.9;
+      flash = 1;
+      shake = 0.8;
       const p = world.playerScreen;
       world.burstAt(p.x, p.y - p.h * 0.5, 520, 1);
-      vibrate([30, 40, 80]);
+      vibrate([40, 30, 120]);
     }
-    if (car > visPlayer + 140) car = null;
+    if (car > visPlayer + 160) car = null;
   }
-  if (state === 'finish' && stateT > (win ? 3.0 : 2.2)) showResult();
+  if (state === 'finish' && t > 3.4) showResult();
 }
 
 function damp(a: number, b: number, k: number, dt: number) {

@@ -55,9 +55,9 @@ def head_x(cell, box):
     return box[0] + (b[0] + b[2]) / 2
 
 
-def save(img, name):
+def save(img, name, quality=86):
     OUT.mkdir(parents=True, exist_ok=True)
-    img.save(OUT / f'{name}.webp', quality=86, method=6)
+    img.save(OUT / f'{name}.webp', quality=quality, method=6)
     print(f'{name}.webp  {img.width}x{img.height}  {(OUT / f"{name}.webp").stat().st_size // 1024} KB')
 
 
@@ -130,3 +130,7 @@ trimmed('f1-car', 720, alpha=True)
 trimmed('boost-button', 360, alpha=True)
 trimmed('boost-burst', 512, alpha=False)
 light_strip('lightning', 2, 2, 400)
+
+# Page background behind the game card (desktop). Plain RGB: it's a photo, not a sprite.
+bg = Image.open(GEN / 'page-bg.png').convert('RGB')
+save(bg.resize((1600, round(bg.height * 1600 / bg.width)), Image.LANCZOS), 'page-bg', quality=68)

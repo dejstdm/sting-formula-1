@@ -9,10 +9,22 @@
     <link rel="icon" type="image/png" href="favicon.png" />
   </head>
   <body>
-    <main class="stage" id="stage" aria-label="Sting Boost race">
-      <canvas id="scene"></canvas>
-      <div id="ui"></div>
+    <header class="site">
+      <img class="wordmark" src="sprites/sting-logo.webp" alt="Sting" />
+      <p class="tag">GET. SET. STING.</p>
+      <div class="site-end">
+        <p class="site-note">1 PLAYER · 1 RIVAL · 3 BOOSTS</p>
+      </div>
+    </header>
+    <main class="shell">
+      <p class="rail left">ENERGY FALLS</p>
+      <section class="stage" id="stage" aria-label="Sting Boost race">
+        <canvas id="scene"></canvas>
+        <div id="ui"></div>
+      </section>
+      <p class="rail right">STING RESTORES IT</p>
     </main>
+    <p class="foot">About 15 seconds · prototype, no rewards attached</p>
     <script type="module" src="/src/main.ts"></script>
   </body>
 </html>

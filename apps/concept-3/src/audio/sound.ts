@@ -1,5 +1,7 @@
 // Fully synthesised audio. Nothing to download, and every sound can react to
 // game state: the music literally runs through an "energy" low-pass filter.
+// Copied from concept 1 without the crowd: this concept has no stadium, and
+// the crowd's noise bed read as hiss on its own.
 
 type Grade = 'perfect' | 'good' | 'miss';
 
@@ -122,23 +124,6 @@ export class Sound {
   // --------------------------------------------------------------- ambience
 
   private startAmbience() {
-    // Crowd: band-passed noise with a slow swell.
-    const crowd = this.noiseSrc(true);
-    const bp = this.ctx.createBiquadFilter();
-    bp.type = 'bandpass';
-    bp.frequency.value = 900;
-    bp.Q.value = 0.6;
-    const g = this.ctx.createGain();
-    g.gain.value = 0.18;
-    const lfo = this.ctx.createOscillator();
-    lfo.frequency.value = 0.17;
-    const lfoG = this.ctx.createGain();
-    lfoG.gain.value = 0.06;
-    lfo.connect(lfoG).connect(g.gain);
-    crowd.connect(bp).connect(g).connect(this.ambience);
-    crowd.start();
-    lfo.start();
-
     // Distant engines circulating.
     const hum = this.ctx.createOscillator();
     hum.type = 'sawtooth';
@@ -158,31 +143,6 @@ export class Sound {
     wob.start();
 
     this.ambience.gain.setTargetAtTime(0.7, this.now, 0.8);
-  }
-
-  crowdSwell(amount = 1) {
-    if (!this.ctx) return;
-    const s = this.noiseSrc();
-    const bp = this.ctx.createBiquadFilter();
-    bp.type = 'bandpass';
-    bp.frequency.value = 1100;
-    bp.Q.value = 0.5;
-    const trem = this.ctx.createGain();
-    const lfo = this.ctx.createOscillator();
-    lfo.frequency.value = 7;
-    const lfoG = this.ctx.createGain();
-    lfoG.gain.value = 0.25;
-    lfo.connect(lfoG).connect(trem.gain);
-    const g = this.ctx.createGain();
-    const t = this.now;
-    g.gain.setValueAtTime(0.0001, t);
-    g.gain.exponentialRampToValueAtTime(0.5 * amount, t + 0.4);
-    g.gain.exponentialRampToValueAtTime(0.0001, t + 2.6);
-    s.connect(bp).connect(trem).connect(g).connect(this.sfx);
-    s.start(t);
-    lfo.start(t);
-    s.stop(t + 2.7);
-    lfo.stop(t + 2.7);
   }
 
   // ------------------------------------------------------------------ music
@@ -402,7 +362,6 @@ export class Sound {
     if (!this.ctx) return;
     this.impact(this.now, 0.7);
     this.whoosh(0.8, 0.4);
-    this.crowdSwell(0.8);
   }
 
   /** Builds tension while the Boost Zone closes in. */
@@ -573,7 +532,6 @@ export class Sound {
   victory() {
     if (!this.ctx) return;
     const t = this.now;
-    this.crowdSwell(1.2);
     const notes = [57, 64, 69, 73, 76, 81];
     notes.forEach((n, i) => {
       for (const det of [-10, 10]) {

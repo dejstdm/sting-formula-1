@@ -79,6 +79,12 @@ export interface Scene {
   zoneHeat: number;
   /** Track position of the victory car, or null. */
   car: number | null;
+  /** Victory car height above the track in metres (it drops in from the sky). */
+  carHeight: number;
+  /** 0–1 camera shake. */
+  shake: number;
+  /** True while a Boost Zone is open: the edges glow red, like slow motion. */
+  zone: boolean;
   /** 0–1 full-screen red flash. */
   flash: number;
 }
@@ -117,6 +123,9 @@ export class World {
   private time = 0;
   private streaks = Array.from({ length: 22 }, () => ({ a: Math.random() * Math.PI * 2, r: Math.random(), v: 0.6 + Math.random() * 0.8 }));
   private speedLines = 0;
+  private zoneGlow = 0;
+  /** Red edge glow, rendered once at a small size and stretched: one cheap drawImage per frame. */
+  private vignette = makeVignette();
   /** Where the player was last drawn, for effects and DOM name tags. */
   playerScreen = { x: 0, y: 0, h: 0 };
   rivalScreen = { x: 0, y: 0, h: 0, on: false };
@@ -191,9 +200,15 @@ export class World {
   draw(ctx: CanvasRenderingContext2D, s: Scene) {
     const { w, h } = this.view;
     const t = this.trackRect;
+    ctx.save();
+    if (s.shake > 0.01) {
+      const m = s.shake * 9;
+      ctx.translate((Math.random() - 0.5) * m, (Math.random() - 0.5) * m);
+    }
     ctx.globalCompositeOperation = 'source-over';
     ctx.globalAlpha = 1;
-    ctx.drawImage(this.art.track, t.x, t.y, t.w, t.h);
+    // Overscan by the shake margin so the edges never show.
+    ctx.drawImage(this.art.track, t.x - 6, t.y - 6, t.w + 12, t.h + 12);
 
     this.drawDashes(ctx, s.cam);
     if (s.zoneAt !== null) this.drawZone(ctx, s.cam, s.zoneAt, s.zoneHeat);
@@ -203,32 +218,37 @@ export class World {
     const dim = (1 - s.energy) * 0.42;
     if (dim > 0.01) {
       ctx.fillStyle = `rgba(0,0,0,${dim})`;
-      ctx.fillRect(0, 0, w, h);
+      ctx.fillRect(-10, -10, w + 20, h + 20);
     }
 
-    // Far to near: whoever is further down the track is drawn first.
+    // Far to near, so nearer things cover farther ones.
     const ahead = s.rival - s.player;
     const rivalZ = CAM_BACK + (ahead > RIVAL_TRUE ? RIVAL_TRUE + (ahead - RIVAL_TRUE) * RIVAL_DEPTH : ahead);
-    const playerZ = s.player - s.cam;
-    const drawRival = () => this.drawRunner(ctx, 'rival', rivalZ, LANE, s.rivalPose, this.rivalPhase + 1.5, 0);
-    const drawPlayer = () => this.drawRunner(ctx, 'player', playerZ, -LANE, s.playerPose, this.playerPhase, s.energy);
-    if (rivalZ >= playerZ) {
-      drawRival();
-      if (s.car !== null) this.drawCar(ctx, s.car - s.cam);
-      drawPlayer();
-    } else {
-      drawPlayer();
-      if (s.car !== null) this.drawCar(ctx, s.car - s.cam);
-      drawRival();
+    const items: [number, () => void][] = [
+      [rivalZ, () => this.drawRunner(ctx, 'rival', rivalZ, LANE, s.rivalPose, this.rivalPhase + 1.5, 0)],
+      [s.player - s.cam, () => this.drawRunner(ctx, 'player', s.player - s.cam, -LANE, s.playerPose, this.playerPhase, s.energy)],
+    ];
+    if (s.car !== null) {
+      const carZ = s.car - s.cam;
+      items.push([carZ, () => this.drawCar(ctx, carZ, s.carHeight)]);
     }
+    items.sort((a, b) => b[0] - a[0]);
+    for (const [, draw] of items) draw();
 
     ctx.globalCompositeOperation = 'lighter';
+    this.zoneGlow += ((s.zone ? 1 : 0) - this.zoneGlow) * 0.15;
+    if (this.zoneGlow > 0.02) {
+      ctx.globalAlpha = this.zoneGlow * (0.75 + 0.25 * Math.sin(this.time * 14));
+      ctx.drawImage(this.vignette, -10, -10, w + 20, h + 20);
+      ctx.globalAlpha = 1;
+    }
     this.drawSpeedLines(ctx, Math.max(this.speedLines, (s.playerSpeed - 9) / 6));
     this.drawEffects(ctx);
     if (s.flash > 0.01) {
       ctx.fillStyle = `rgba(255,24,24,${s.flash * 0.32})`;
-      ctx.fillRect(0, 0, w, h);
+      ctx.fillRect(-10, -10, w + 20, h + 20);
     }
+    ctx.restore();
     ctx.globalCompositeOperation = 'source-over';
     ctx.globalAlpha = 1;
   }
@@ -327,15 +347,26 @@ export class World {
     if (who === 'rival') this.rivalScreen.on = near > 0.5;
   }
 
-  private drawCar(ctx: CanvasRenderingContext2D, z: number) {
+  private drawCar(ctx: CanvasRenderingContext2D, z: number, height: number) {
     if (z < 0.5) return;
     const img = this.art['f1-car'];
     const p = this.project(z, 0);
     const cw = 2.3 * p.k;
     const ch = (cw * img.height) / img.width;
-    ctx.globalAlpha = Math.min(1, (z - 0.5) / 0.6);
-    ctx.drawImage(img, p.x - cw / 2, p.y - ch * 0.9, cw, ch);
-    ctx.globalAlpha = 1;
+    if (height < 0.05) {
+      // Ground shadow under the landed car.
+      ctx.fillStyle = 'rgba(0,0,0,0.55)';
+      ctx.beginPath();
+      ctx.ellipse(p.x, p.y - ch * 0.06, cw * 0.5, ch * 0.08, 0, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.drawImage(img, p.x - cw / 2, p.y - ch * 0.9 - height * p.k, cw, ch);
+  }
+
+  /** Screen position of the car's landing spot, for the touchdown burst. */
+  carScreen(track: number, cam: number) {
+    const p = this.project(Math.max(0.6, track - cam), 0);
+    return { x: p.x, y: p.y, k: p.k };
   }
 
   private drawSpeedLines(ctx: CanvasRenderingContext2D, amount: number) {
@@ -387,4 +418,18 @@ export class World {
     }
     ctx.globalAlpha = 1;
   }
+}
+
+function makeVignette(): HTMLCanvasElement {
+  const c = document.createElement('canvas');
+  c.width = 120;
+  c.height = 200;
+  const g = c.getContext('2d')!;
+  const grad = g.createRadialGradient(60, 100, 40, 60, 100, 125);
+  grad.addColorStop(0, 'rgba(255,0,0,0)');
+  grad.addColorStop(0.6, 'rgba(255,20,10,0.12)');
+  grad.addColorStop(1, 'rgba(255,30,20,0.6)');
+  g.fillStyle = grad;
+  g.fillRect(0, 0, 120, 200);
+  return c;
 }

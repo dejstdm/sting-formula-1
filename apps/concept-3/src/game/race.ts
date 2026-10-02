@@ -27,8 +27,9 @@ export const RACE = {
   rivalSpeed: 9.2,
   baseSpeed: 7.4,
   energySpeed: 2.0,
-  /** Same shove on every Boost. A perfect is worth more than a good one, and a miss gives nothing. */
-  kick: { perfect: 7.2, good: 4.0 },
+  kick: { perfect: 2.5, good: 1.25 },
+  /** The last Boost is the decider, so it hits harder. */
+  finalKick: { perfect: 18, good: 11.7 },
   kickDecay: 1.5,
   energyAfter: { perfect: 100, good: 68 },
   energyAtTarget: 18,
@@ -135,7 +136,7 @@ export class Race {
     this.results.push(r);
     if (grade !== 'miss') {
       this.energy = Math.max(this.energy, RACE.energyAfter[grade]);
-      this.kick = RACE.kick[grade];
+      this.kick = (w.index === this.windows.length - 1 ? RACE.finalKick : RACE.kick)[grade];
     }
     const next = this.windows[this.results.length];
     if (next) {

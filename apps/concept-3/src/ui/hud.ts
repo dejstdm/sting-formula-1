@@ -64,14 +64,15 @@ export class Hud {
           <div class="progress"><span class="dot rival"></span><span class="dot me"></span></div>
           <div class="clock">0:00</div>
         </div>
+        <div class="zone-label">BOOST ZONE</div>
         <div class="feedback"></div>
         <div class="bottom">
           <div class="meter">
-            <div class="meter-head"><small>ENERGY</small><b class="meter-pct">100%</b></div>
-            <div class="meter-track"><div class="meter-fill"></div></div>
+            <div class="meter-pct">100<small>%</small></div>
+            <div class="meter-can"><div class="meter-fill"></div><div class="meter-shine"></div></div>
+            <div class="meter-label">ENERGY</div>
           </div>
           <div class="boost">
-            <div class="zone-label">BOOST ZONE</div>
             <div class="ring target"></div>
             <div class="ring closing"></div>
             <button class="boost-btn" type="button" aria-label="Sting Boost" tabindex="-1">
@@ -100,7 +101,9 @@ export class Hud {
       this.labels[key] = { el, sub: el.querySelector('small')! };
     }
 
-    root.append(this.intro, this.count, this.hud, this.result, this.mute);
+    root.append(this.intro, this.count, this.hud, this.result);
+    // Sound lives in the page header, outside the game, so tapping it never counts as a Boost.
+    (document.querySelector('.site-end') ?? root).append(this.mute);
 
     for (const sel of ['.clock', '.dot.me', '.dot.rival', '.meter', '.meter-fill', '.meter-pct', '.boost', '.ring.closing', '.zone-label', '.boost-btn']) {
       this.els[sel] = this.hud.querySelector(sel)!;
@@ -153,13 +156,14 @@ export class Hud {
     this.els['.dot.me'].style.transform = p(s.player);
     this.els['.dot.rival'].style.transform = p(s.rival);
 
-    const pct = `${Math.round(s.energy)}%`;
-    if (pct !== this.lastPct) this.els['.meter-pct'].textContent = this.lastPct = pct;
-    this.els['.meter-fill'].style.transform = `scaleX(${Math.max(0.02, s.energy / 100)})`;
+    const pct = String(Math.round(s.energy));
+    if (pct !== this.lastPct) this.els['.meter-pct'].innerHTML = `${(this.lastPct = pct)}<small>%</small>`;
+    this.els['.meter-fill'].style.transform = `scaleY(${Math.max(0.02, s.energy / 100)})`;
     this.els['.meter'].classList.toggle('low', s.energy < 30);
     this.els['.meter'].classList.toggle('max', s.energy > 97);
 
     const boost = this.els['.boost'];
+    this.hud.classList.toggle('zone', s.zone !== null);
     if (s.zone !== null) {
       boost.classList.add('zone');
       // The ring meets the dashed ring at the sweet spot, then fades. Tap when they meet.

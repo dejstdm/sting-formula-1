@@ -1,0 +1,5 @@
+Recreate the FIRST attached image (the empty neon race track) as closely as possible: same camera, same perspective, same dark side walls with red neon lines, same glowing red edge strips, same wet reflective surface, same red haze, portrait 1024x1536.
+Two changes only:
+1) REMOVE the dashed white centre line completely. The track surface is one uninterrupted dark wet surface.
+2) REMOVE the FINISH gate and its text. The far end of the track just fades into red haze at the vanishing point.
+No people, no cars, no text at all.

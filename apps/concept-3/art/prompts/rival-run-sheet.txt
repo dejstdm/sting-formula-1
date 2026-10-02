@@ -1,0 +1,9 @@
+SPRITE SHEET of a RIVAL runner. Use the first attached image only for pose, framing, proportions and art style. The rival is a different athletic man (short dark hair) wearing a dark grey tank top and shorts. His contours glow in cool white / pale silver neon instead of red, dimmer and less saturated than the red runner. Seen directly from BEHIND, running straight away from the camera.
+Layout: portrait canvas 1024x1536, a 2x2 grid of four equal cells (each 512x768). One full-body figure per cell, head to shoes, centered, same size and same height in every cell, feet near the bottom of each cell, nothing crossing the cell borders, no grid lines drawn.
+The four cells are four consecutive frames of one smooth running cycle, read left-to-right then top-to-bottom:
+1) left foot planted, right leg swinging forward, left arm forward.
+2) passing pose: both legs under the body, right knee driving up.
+3) right foot planted, left leg swinging forward, right arm forward (mirror of frame 1).
+4) passing pose: left knee driving up (mirror of frame 2).
+Character, outfit, glow and camera angle identical across all four frames; only the limbs change.
+STYLE (must match the attached reference images): dark cinematic neon look. Pure flat black background (#000000) everywhere outside the subject: no floor, no shadow, no gradient, no vignette, no text, no watermark. Light comes only from glowing neon edges and contours. Runner glow color: white/silver (#e8eef5).

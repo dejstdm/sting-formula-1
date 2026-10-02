@@ -1,0 +1,4 @@
+POSE SHEET of the SAME red neon runner as in the first attached image (same body, hair, outfit, glowing red shoes). Landscape canvas 1536x1024, a 1x2 grid of two equal cells (each 768x1024), full body, same scale, no grid lines drawn.
+Cell 1 (left): seen from BEHIND, crouched in a sprinter's "set" start position, hands on the ground, hips raised, ready to launch.
+Cell 2 (right): seen from BEHIND, standing tall in victory, both arms raised high in triumph, fists clenched, extra bright red glow and a faint red energy aura around the body.
+STYLE (must match the attached reference images): dark cinematic neon look. Pure flat black background (#000000) everywhere outside the subject: no floor, no shadow, no gradient, no vignette, no text, no watermark. Light comes only from glowing neon edges and contours. Glow color: bright red neon (#ff1a1a).

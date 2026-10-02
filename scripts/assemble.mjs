@@ -19,7 +19,7 @@ function run(command, args) {
 
 await rm(published, { recursive: true, force: true });
 
-for (const app of ['concept-1', 'concept-2']) {
+for (const app of ['concept-1', 'concept-2', 'concept-3']) {
   await run('npm', ['run', 'build', '-w', app]);
   await mkdir(path.join(published, app), { recursive: true });
   await cp(path.join(root, 'apps', app, 'dist'), path.join(published, app), { recursive: true });
@@ -41,4 +41,4 @@ await writeFile(
 `,
 );
 
-console.log('Published dist/concept-1, dist/concept-2, and a root redirect to /concept-1/');
+console.log('Published dist/concept-1, dist/concept-2, dist/concept-3, and a root redirect to /concept-1/');

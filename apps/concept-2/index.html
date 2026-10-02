@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="theme-color" content="#f6f1e7" />
+    <meta name="description" content="STING BOOST: a 15-second player vs. rival race. Time your Sting Boost, take the edge." />
+    <title>STING BOOST</title>
+    <link rel="icon" type="image/png" href="favicon.png" />
+  </head>
+  <body>
+    <header class="site">
+      <img class="wordmark" src="sprites/sting-logo.png" alt="Sting" />
+      <p class="tag">GET. SET. STING.</p>
+      <p class="site-note">1 PLAYER · 1 RIVAL · 3 BOOSTS</p>
+    </header>
+    <main class="shell">
+      <p class="rail left">ENERGY FALLS</p>
+      <section class="stage" id="stage" aria-label="Sting Boost race">
+        <canvas id="scene"></canvas>
+        <div id="ui"></div>
+      </section>
+      <p class="rail right">STING RESTORES IT</p>
+    </main>
+    <p class="foot">About 15 seconds · prototype, no rewards attached</p>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

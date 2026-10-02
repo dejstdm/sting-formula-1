@@ -27,9 +27,12 @@ export const RACE = {
   rivalSpeed: 9.2,
   baseSpeed: 7.4,
   energySpeed: 2.0,
-  kick: { perfect: 2.5, good: 1.25 },
-  /** The last Boost is the decider, so it hits harder. */
-  finalKick: { perfect: 18, good: 11.7 },
+  /**
+   * Every Boost is a visible surge. The last one is the decider, so it hits
+   * harder, but under 2x the others (concept 1 uses 2.5 then 18).
+   */
+  kick: { perfect: 6, good: 3 },
+  finalKick: { perfect: 11, good: 7 },
   kickDecay: 1.5,
   energyAfter: { perfect: 100, good: 68 },
   energyAtTarget: 18,

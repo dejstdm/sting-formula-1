@@ -151,10 +151,10 @@ export class Hud {
     // Only touch the DOM when a value actually changes; cheap phones feel every layout.
     const clock = `0:${String(Math.floor(Math.max(0, s.t))).padStart(2, '0')}`;
     if (clock !== this.lastClock) this.els['.clock'].textContent = this.lastClock = clock;
-    // .progress is a size container, so cqw is a percentage of the bar: no layout, just a transform.
-    const p = (v: number) => `translateX(${Math.min(100, (v / s.length) * 100)}cqw)`;
-    this.els['.dot.me'].style.transform = p(s.player);
-    this.els['.dot.rival'].style.transform = p(s.rival);
+    // Plain percentages work in every browser; two tiny dots are cheap to lay out.
+    const p = (v: number) => `${Math.min(100, (v / s.length) * 100)}%`;
+    this.els['.dot.me'].style.left = p(s.player);
+    this.els['.dot.rival'].style.left = p(s.rival);
 
     const pct = String(Math.round(s.energy));
     if (pct !== this.lastPct) this.els['.meter-pct'].innerHTML = `${(this.lastPct = pct)}<small>%</small>`;

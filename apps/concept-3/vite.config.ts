@@ -26,7 +26,8 @@ export default defineConfig({
   base: '/concept-3/',
   plugins: [redirectRoot()],
   build: {
-    target: 'es2022',
+    // Down-compile for older phones still in use (iOS 14, Chrome 87).
+    target: ['es2020', 'safari14', 'chrome87'],
     chunkSizeWarningLimit: 800,
   },
 });

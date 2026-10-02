@@ -29,6 +29,7 @@ body {
   --foot: 40px;
   display: grid;
   grid-template-rows: var(--head) 1fr var(--foot);
+  height: 100vh;
   height: 100dvh;
   /* --page-bg is set from main.ts, so the URL follows Vite's base path. */
   background: #000 var(--page-bg, none) center / cover no-repeat;
@@ -101,6 +102,8 @@ body {
   .wordmark { height: 24px; }
   .tag, .rail, .foot, .site-note { display: none; }
   .shell { padding: 6px 6px calc(6px + env(safe-area-inset-bottom)); }
+  /* The card covers the page here, so skip the background image: 160 KB and ~7 MB decoded. */
+  body { background: #000; }
   .stage { height: 100%; width: 100%; max-height: none; aspect-ratio: auto; border-radius: 18px; }
 }
 
@@ -144,7 +147,7 @@ body {
   text-align: center;
 }
 .intro .logo { width: min(44%, 190px); filter: drop-shadow(0 0 18px rgba(255, 30, 30, 0.6)); }
-.can-wrap { position: relative; height: 32dvh; display: grid; place-items: center; }
+.can-wrap { position: relative; height: 32vh; height: 32dvh; display: grid; place-items: center; }
 .can-wrap::before {
   content: '';
   position: absolute;
@@ -152,7 +155,7 @@ body {
   background: radial-gradient(circle, rgba(255, 30, 30, 0.55), transparent 62%);
   animation: breathe 1.6s ease-in-out infinite;
 }
-.can { position: relative; height: 32dvh; width: auto; animation: hover 2.4s ease-in-out infinite; }
+.can { position: relative; height: 32vh; height: 32dvh; width: auto; animation: hover 2.4s ease-in-out infinite; }
 .intro h1 {
   margin: 0;
   font: 400 clamp(40px, 8.5vh, 64px)/0.95 var(--display);
@@ -222,7 +225,6 @@ body {
 .names .rival { justify-self: end; color: var(--rival); }
 .names span { font: 600 16px/1 var(--label); color: var(--mute); padding: 0 10px; }
 .progress {
-  container-type: inline-size;
   position: relative;
   width: 100%;
   height: 3px;
@@ -240,12 +242,12 @@ body {
 }
 .dot {
   position: absolute;
-  left: -5px;
+  left: 0;
+  margin-left: -5px;
   top: -4px;
   width: 11px;
   height: 11px;
   border-radius: 50%;
-  will-change: transform;
 }
 .dot.me { background: var(--red); box-shadow: 0 0 10px var(--red); }
 .dot.rival { background: var(--rival); }
@@ -281,6 +283,7 @@ body {
 .meter-can {
   position: relative;
   width: 30px;
+  height: 160px;
   height: min(24cqh, 190px);
   border-radius: 10px 10px 8px 8px;
   background: rgba(0, 0, 0, 0.55);
@@ -356,6 +359,7 @@ body {
   left: 0;
   right: 0;
   text-align: center;
+  font: italic 400 30px/1 var(--display);
   font: italic 400 min(9cqw, 34px)/1 var(--display);
   letter-spacing: 0.08em;
   color: #fff;
@@ -379,7 +383,7 @@ body {
 /* Boost feedback, centre screen */
 .feedback { position: absolute; left: 0; right: 0; top: 30%; display: grid; place-items: center; }
 .fb { grid-area: 1 / 1; text-align: center; opacity: 0; }
-.fb b { display: block; font: italic 400 min(11.5cqw, 7cqh)/1 var(--display); letter-spacing: 0.02em; white-space: nowrap; }
+.fb b { display: block; font: italic 400 42px/1 var(--display); font: italic 400 min(11.5cqw, 7cqh)/1 var(--display); letter-spacing: 0.02em; white-space: nowrap; }
 .fb small { display: block; margin-top: 6px; font-weight: 700; font-size: 16px; letter-spacing: 0.18em; color: var(--mute); }
 .fb.perfect b { color: #fff; text-shadow: 0 0 22px var(--red), 0 0 4px var(--red); }
 .fb.good b { color: var(--good); }
@@ -466,4 +470,18 @@ body {
 
 @media (prefers-reduced-motion: reduce) {
   .can, .can-wrap::before, .cta, .meter.low .meter-can, .hud.zone .zone-label { animation: none; }
+}
+
+.debug {
+  position: absolute;
+  left: 8px;
+  top: 150px;
+  margin: 0;
+  padding: 6px 8px;
+  border-radius: 6px;
+  background: rgba(0, 0, 0, 0.7);
+  font: 11px/1.35 ui-monospace, monospace;
+  color: #9f9;
+  pointer-events: none;
+  z-index: 4;
 }

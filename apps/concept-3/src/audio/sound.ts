@@ -44,7 +44,9 @@ export class Sound {
    */
   prepare() {
     if (!this.ctx) {
-      this.ctx = new AudioContext({ latencyHint: 'interactive' });
+      // iOS Safari before 14.5 only has the prefixed constructor.
+      const Ctx = window.AudioContext ?? (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+      this.ctx = new Ctx({ latencyHint: 'interactive' });
       const comp = this.ctx.createDynamicsCompressor();
       comp.threshold.value = -14;
       comp.ratio.value = 4;

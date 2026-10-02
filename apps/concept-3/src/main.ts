@@ -22,8 +22,15 @@ const autoPlan = params.get('auto')?.toUpperCase().replace(/[^PGM]/g, '') ?? nul
 const name = playerName();
 /** Camera distance behind the player, in metres. Matches CAM_BACK in the renderer. */
 const CAM_BACK = 3.2;
-/** Most backing pixels we draw per frame. Above this, extra resolution costs fill rate on cheap phones for little visible gain. */
-const PIXEL_BUDGET = params.has('px') ? Number(params.get('px')) : 1_300_000;
+/**
+ * Most backing pixels per frame. The track art is 720×1080 (0.78 Mpx), so going far
+ * past ~1 Mpx only upscales it further while costing fill rate on cheap phones.
+ */
+const PIXEL_BUDGET = params.has('px') ? Number(params.get('px')) : 1_000_000;
+/** Lowest the automatic step-down goes. Below this the art turns visibly soft. */
+const PIXEL_FLOOR = 480_000;
+let pixelBudget = PIXEL_BUDGET;
+let sizeDirty = true;
 
 type State = 'loading' | 'intro' | 'launch' | 'countdown' | 'race' | 'finish' | 'result';
 
@@ -104,6 +111,9 @@ function scene(): Scene {
 }
 
 function resize() {
+  // Reading layout every frame can force a reflow, so only re-measure when the size changed.
+  if (!sizeDirty) return;
+  sizeDirty = false;
   const rect = stage.getBoundingClientRect();
   const h = Math.round(Math.min(1100, Math.max(640, (480 * rect.height) / Math.max(1, rect.width))));
   if (h !== view.h) {
@@ -112,7 +122,7 @@ function resize() {
   }
   let dpr = Math.min(2, window.devicePixelRatio || 1);
   const px = rect.width * rect.height * dpr * dpr;
-  if (px > PIXEL_BUDGET) dpr *= Math.sqrt(PIXEL_BUDGET / px);
+  if (px > pixelBudget) dpr *= Math.sqrt(pixelBudget / px);
   const bw = Math.max(1, Math.round(rect.width * dpr));
   const bh = Math.max(1, Math.round(rect.height * dpr));
   if (canvas.width !== bw || canvas.height !== bh) {
@@ -315,8 +325,53 @@ function showResult() {
   });
 }
 
+/**
+ * If frames stay slow (under ~48 fps) for 1.5 s while racing, draw fewer pixels.
+ * Steps only go down, and never below PIXEL_FLOOR. Turned off by ?fixedres.
+ */
+const governor = { slowFor: 0, avg: 1 / 60, steps: 0 };
+function govern(rawDt: number) {
+  if (params.has('fixedres') || (state !== 'race' && state !== 'finish')) return;
+  governor.avg += (Math.min(rawDt, 0.1) - governor.avg) * 0.1;
+  governor.slowFor = governor.avg > 1 / 48 ? governor.slowFor + rawDt : 0;
+  if (governor.slowFor > 1.5 && pixelBudget > PIXEL_FLOOR) {
+    pixelBudget = Math.max(PIXEL_FLOOR, pixelBudget * 0.7);
+    governor.slowFor = 0;
+    governor.steps++;
+    sizeDirty = true;
+  }
+}
+
+const debugEl = params.has('debug') ? document.createElement('pre') : null;
+const perf = { frames: 0, time: 0, worst: 0, js: 0, shown: 0 };
+if (debugEl) {
+  debugEl.className = 'debug';
+  stage.append(debugEl);
+}
+function debugTick(rawDt: number, jsMs: number) {
+  if (!debugEl) return;
+  perf.frames++;
+  perf.time += rawDt;
+  perf.worst = Math.max(perf.worst, rawDt);
+  perf.js = Math.max(perf.js, jsMs);
+  if (perf.time < 0.5) return;
+  const mpx = (canvas.width * canvas.height) / 1e6;
+  debugEl.textContent =
+    `fps ${(perf.frames / perf.time).toFixed(0)} · avg ${((perf.time / perf.frames) * 1000).toFixed(1)} ms · worst ${(perf.worst * 1000).toFixed(0)} ms\n` +
+    `js ${perf.js.toFixed(1)} ms · canvas ${canvas.width}×${canvas.height} (${mpx.toFixed(2)} Mpx)\n` +
+    `budget ${(pixelBudget / 1e6).toFixed(2)} Mpx · step-downs ${governor.steps} · dpr ${window.devicePixelRatio}\n` +
+    `state ${state} · t ${race.t.toFixed(2)} · E ${race.energy.toFixed(0)}`;
+  perf.frames = 0;
+  perf.time = 0;
+  perf.worst = 0;
+  perf.js = 0;
+}
+
 function frame(now: number) {
-  const dt = Math.min(maxStep, (now - lastFrame) / 1000);
+  const jsStart = performance.now();
+  const rawDt = (now - lastFrame) / 1000;
+  govern(rawDt);
+  const dt = Math.min(maxStep, rawDt);
   lastFrame = now;
   stateT += dt;
 
@@ -359,6 +414,7 @@ function frame(now: number) {
       zone: race.activeWindow ? race.zoneProgress() : null,
     });
   }
+  debugTick(rawDt, performance.now() - jsStart);
   requestAnimationFrame(frame);
 }
 
@@ -451,6 +507,7 @@ async function boot() {
     return;
   }
   world.setView(view);
+  new ResizeObserver(() => (sizeDirty = true)).observe(stage);
   resetRace();
   wireInput();
   resize();

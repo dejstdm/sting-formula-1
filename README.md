@@ -4,13 +4,18 @@ A showcase prototype of the game proposed in `2026-09-30-STING_x_F1_2027-Engagem
 
 This build is the game only. It has no backend, registration, Proof of Purchase or rewards, and uses no licensed F1 assets.
 
+The current game is concept 1, served at `/concept-1/` on one Vercel project. Later concepts are separate apps under `apps/` and get their own path. `/` redirects to `/concept-1/` and keeps the query string, so `/?name=MAX` still opens this game.
+
+`game-v2-asstest/Image001.jpg` is reference art for how concept 2 should look. The game does not load it.
+
 ## Run it
 
 ```bash
 npm install
-npm run dev          # http://localhost:5173, also on your LAN for phone testing
-npm run build        # static build in dist/, deployable to Vercel/Netlify as-is
-node scripts/sim.ts  # prints win/lose for all 27 Boost combinations
+npm run dev          # http://localhost:5173/concept-1/  (also on your LAN)
+npm run build        # each app builds on its own, then dist/ is assembled
+npm run preview      # http://localhost:4173/concept-1/ from that dist/
+npm run sim          # win/lose for all 27 Boost combinations
 ```
 
 ## URL flags
@@ -59,13 +64,15 @@ In dev, opening the game with `?debug` appends a performance sample to `perf.log
 ## Where things live
 
 ```
-src/game/race.ts     pure race sim: energy, Boost windows, grading, score (no rendering)
-src/main.ts          state machine, camera rig, Boost choreography, cinematics
-src/engine/          renderer + post pipeline, quality tiers
-src/world/           track, runners, F1 car, can, particles, lighting, canvas textures
-src/audio/sound.ts   synthesised music and SFX
-src/ui/              DOM HUD and styles
-scripts/sim.ts       balancing harness
+apps/concept-1/src/game/race.ts    pure race sim: energy, Boost windows, grading, score
+apps/concept-1/src/main.ts         state machine, camera rig, Boost choreography, cinematics
+apps/concept-1/src/engine/         renderer + post pipeline, quality tiers
+apps/concept-1/src/world/          track, runners, F1 car, can, particles, lighting, textures
+apps/concept-1/src/audio/sound.ts  synthesised music and SFX
+apps/concept-1/src/ui/             DOM HUD and styles
+apps/concept-1/scripts/sim.ts      balancing harness
+scripts/assemble.mjs               builds every app into its own dist, then copies into dist/
+vercel.json                        one project, trailing slash, / redirects to /concept-1/
 ```
 
 ## Balance (v1)
@@ -82,12 +89,12 @@ This is a promo game, so most people should win, but skill still shows in the sc
 Check balance after any change:
 
 ```bash
-node scripts/sim.ts     # outcome for each of the 27 grade combinations
-node scripts/human.ts   # Monte Carlo win rates for skilled / average / first-timer players
-LATENCY=130 node scripts/human.ts
+npm run sim                              # outcome for each of the 27 grade combinations
+npm run human                            # Monte Carlo win rates
+LATENCY=130 npm run human
 ```
 
-At 90 ms of device latency, the simulated win rates are 100% skilled, 99% average and 89% first-timer. All constants are in `RACE` in `src/game/race.ts`.
+At 90 ms of device latency, the simulated win rates are 100% skilled, 99% average and 89% first-timer. All constants are in `RACE` in `apps/concept-1/src/game/race.ts`.
 
 ## Placeholders to replace
 

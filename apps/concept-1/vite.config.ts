@@ -37,9 +37,31 @@ function perfLog(): Plugin {
   };
 }
 
+/** Send /?name=MAX to /concept-1/?name=MAX while this app is the only concept. */
+function redirectRootToConcept(): Plugin {
+  const redirect = (req: { url?: string }, res: { statusCode: number; setHeader: (k: string, v: string) => void; end: () => void }, next: () => void) => {
+    const url = req.url ?? '/';
+    const path = url.split('?')[0];
+    if (path !== '/') {
+      next();
+      return;
+    }
+    const query = url.includes('?') ? url.slice(url.indexOf('?')) : '';
+    res.statusCode = 302;
+    res.setHeader('Location', `/concept-1/${query}`);
+    res.end();
+  };
+  return {
+    name: 'redirect-root-to-concept',
+    configureServer(server) {
+      server.middlewares.use(redirect);
+    },
+  };
+}
+
 export default defineConfig({
-  base: './',
-  plugins: [perfLog()],
+  base: '/concept-1/',
+  plugins: [redirectRootToConcept(), perfLog()],
   build: {
     target: 'es2022',
     chunkSizeWarningLimit: 1500,

@@ -16,6 +16,7 @@ import { Effects } from './world/fx';
 import { worldU } from './world/palette';
 import { Hud } from './ui/hud';
 import { sound } from './audio/sound';
+import { publicUrl } from './publicUrl';
 
 // ----------------------------------------------------------------- params
 
@@ -49,7 +50,7 @@ loader.className = 'loader';
 // long tasks, so a bar sat still and looked frozen. A CSS transform animation keeps spinning
 // on the compositor thread even while the page is busy.
 loader.innerHTML = `<div class="loader-box">
-  <img class="loader-logo" src="./textures/sting-logo.png" alt="Sting" />
+  <img class="loader-logo" src="${publicUrl('textures/sting-logo.png')}" alt="Sting" />
   <div class="loader-spinner" role="progressbar" aria-label="Loading"></div>
   <p>GET. SET. STING.</p>
   <small class="step">CHARGING</small>
@@ -175,7 +176,7 @@ async function boot() {
   await Promise.all([document.fonts.load('100px Anton'), document.fonts.load('600 40px "Barlow Condensed"')]);
   setProgress(0.3);
   sound.prepare();
-  await loadRunnerAsset('./models/runner.glb');
+  await loadRunnerAsset(publicUrl('models/runner.glb'));
   setProgress(0.6);
 
   const scene = stage.scene;
@@ -190,7 +191,7 @@ async function boot() {
   scene.add(car.root);
 
   // Real can art, unwrapped from the client deck. The game still works without it.
-  const label = await new THREE.TextureLoader().loadAsync('./textures/sting-can-label.jpg').catch(() => undefined);
+  const label = await new THREE.TextureLoader().loadAsync(publicUrl('textures/sting-can-label.jpg')).catch(() => undefined);
   if (label) {
     label.colorSpace = THREE.SRGBColorSpace;
     label.anisotropy = 8;

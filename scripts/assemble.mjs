@@ -18,10 +18,12 @@ function run(command, args) {
 }
 
 await rm(published, { recursive: true, force: true });
-await run('npm', ['run', 'build', '-w', 'concept-1']);
 
-await mkdir(path.join(published, 'concept-1'), { recursive: true });
-await cp(path.join(root, 'apps', 'concept-1', 'dist'), path.join(published, 'concept-1'), { recursive: true });
+for (const app of ['concept-1', 'concept-2']) {
+  await run('npm', ['run', 'build', '-w', app]);
+  await mkdir(path.join(published, app), { recursive: true });
+  await cp(path.join(root, 'apps', app, 'dist'), path.join(published, app), { recursive: true });
+}
 
 await writeFile(
   path.join(published, 'index.html'),
@@ -39,4 +41,4 @@ await writeFile(
 `,
 );
 
-console.log('Published dist/concept-1 and a root redirect to /concept-1/');
+console.log('Published dist/concept-1, dist/concept-2, and a root redirect to /concept-1/');

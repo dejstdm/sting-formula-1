@@ -7,6 +7,7 @@
   ],
   "scripts": {
     "dev": "npm run dev -w concept-1",
+    "dev:concept-2": "npm run dev -w concept-2",
     "build": "node scripts/assemble.mjs",
     "preview": "vite preview --config vite.preview.config.ts --host --port 4173",
     "sim": "npm run sim -w concept-1",

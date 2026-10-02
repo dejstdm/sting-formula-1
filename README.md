@@ -4,7 +4,7 @@ A showcase prototype of the game proposed in `2026-09-30-STING_x_F1_2027-Engagem
 
 This build is the game only. It has no backend, registration, Proof of Purchase or rewards, and uses no licensed F1 assets.
 
-Concept 1 is the 3D build, served at `/concept-1/`. Concept 2 is the canvas build, served at `/concept-2/`. `/` redirects to `/concept-1/` and keeps the query string, so `/?name=MAX` still opens concept 1.
+Concept 1 is the 3D build, served at `/concept-1/`. Concept 2 is the canvas build, served at `/concept-2/`. Concept 3 is the 2.5D build at `/concept-3/`: the deck's own view, with neon runners seen from behind on a portrait track, drawn as sprites with Canvas 2D so it runs on low-end phones. Its art is generated (see `apps/concept-3/art/`). `/` redirects to `/concept-1/` and keeps the query string, so `/?name=MAX` still opens concept 1.
 
 `game-v2-asstest/Image001.jpg` is the framed-layout reference for concept 2. The game does not load it.
 
@@ -18,6 +18,7 @@ npm run dev:concept-2   # http://localhost:5174/concept-2/
 npm install
 npm run dev          # http://localhost:5173/concept-1/  (also on your LAN)
 npm run dev:concept-2 # http://localhost:5174/concept-2/
+npm run dev:concept-3 # http://localhost:5175/concept-3/
 npm run build        # each app builds on its own, then dist/ is assembled
 npm run preview      # http://localhost:4173/concept-1/ from that dist/
 npm run sim          # win/lose for all 27 Boost combinations

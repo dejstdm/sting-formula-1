@@ -4,17 +4,15 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <meta name="theme-color" content="#000000" />
-    <title>STING BOOST · concept 3</title>
-    <style>
-      html, body { margin: 0; height: 100%; background: #000; color: #bbb; font: 14px system-ui, sans-serif; }
-      body { display: grid; place-items: center; }
-      canvas { width: min(100vw, calc(100dvh * 480 / 780)); aspect-ratio: 480 / 780; display: block; touch-action: manipulation; }
-      .note { position: fixed; bottom: 8px; left: 0; right: 0; margin: 0; text-align: center; opacity: 0.6; pointer-events: none; }
-    </style>
+    <meta name="description" content="STING BOOST: a 15-second player vs. rival race. Time your Sting Boost, take the edge." />
+    <title>STING BOOST</title>
+    <link rel="icon" type="image/png" href="favicon.png" />
   </head>
   <body>
-    <canvas id="scene" width="480" height="780"></canvas>
-    <p class="note">Asset preview · tap STING BOOST or press Space</p>
+    <main class="stage" id="stage" aria-label="Sting Boost race">
+      <canvas id="scene"></canvas>
+      <div id="ui"></div>
+    </main>
     <script type="module" src="/src/main.ts"></script>
   </body>
 </html>

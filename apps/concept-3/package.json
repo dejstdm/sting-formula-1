@@ -1,0 +1,22 @@
+{
+  "name": "concept-3",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite --host --port 5175",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview --host --port 4175",
+    "art": "python3 art/pack.py",
+    "sim": "node scripts/sim.ts",
+    "human": "node scripts/human.ts"
+  },
+  "devDependencies": {
+    "typescript": "^7.0.2",
+    "vite": "^8.3.1"
+  },
+  "dependencies": {
+    "@fontsource/anton": "^5.3.0",
+    "@fontsource/barlow-condensed": "^5.3.0"
+  }
+}

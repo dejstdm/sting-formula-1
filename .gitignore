@@ -30,3 +30,6 @@ Thumbs.db
 *.ppt
 *.key
 *.pdf
+
+# Images pulled from the client deck, used only as generation references
+apps/concept-3/art/ref/deck-*

@@ -1,0 +1,4 @@
+POSE SHEET of the SAME rival runner as in the first attached image (same body, dark short hair, dark grey tank top and shorts, white/silver neon contour glow, glowing white shoes). Landscape canvas 1536x1024, a 1x2 grid of two equal cells (each 768x1024), full body, same scale, no grid lines drawn.
+Cell 1 (left): seen from BEHIND, crouched in a sprinter's "set" start position, hands on the ground, hips raised. Same framing as the red runner's crouch in the second attached image.
+Cell 2 (right): seen from BEHIND, standing tall in victory, both arms raised high in triumph, faint white energy aura.
+STYLE (must match the attached reference images): dark cinematic neon look. Pure flat black background (#000000) everywhere outside the subject: no floor, no shadow, no gradient, no vignette, no text, no watermark. Glow color: white/silver (#e8eef5), dimmer than a red hero.

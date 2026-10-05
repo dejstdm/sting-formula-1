@@ -94,6 +94,52 @@ def pose(cell, src_per_px, out_name):
     save(with_alpha(crop).resize(size, Image.LANCZOS), out_name)
 
 
+def main_figure(cell, gap=8):
+    """Black out everything outside the cell's tallest run of lit rows.
+
+    Figures in a sheet's lower row can poke their hair up into the cell above,
+    which would show as a stray arc under the upper figure's feet.
+    """
+    lum = cell.convert('L').point(lambda v: 255 if v > THRESH else 0)
+    rows = [lum.crop((0, y, cell.width, y + 1)).getbbox() is not None for y in range(cell.height)]
+    best, start, last = (0, 0), None, -gap - 1
+    for y, lit in enumerate(rows):
+        if not lit:
+            continue
+        if y - last > gap:
+            start = y
+        last = y
+        if y - start > best[1] - best[0]:
+            best = (start, y + 1)
+    out = Image.new('RGB', cell.size)
+    out.paste(cell.crop((0, best[0], cell.width, best[1])), (0, best[0]))
+    return out
+
+
+def seq_strip(name, ref, ref_h, out_name, flip=()):
+    """A 2x2 sheet of poses as one strip of equal cells, feet on one baseline.
+
+    The whole sheet shares one scale, picked so cell `ref`'s figure comes out
+    `ref_h` px tall: that ties it to the run frames' 320 px per body height.
+    Cells in `flip` are mirrored, for when the AI put the same leg forward twice.
+    """
+    cells = [c.transpose(Image.FLIP_LEFT_RIGHT) if i in flip else c for i, c in enumerate(grid(name, 2, 2))]
+    cells = [main_figure(c) for c in cells]
+    boxes = [bbox(c) for c in cells]
+    s = (boxes[ref][3] - boxes[ref][1]) / ref_h
+    pad = 24
+    crops = []
+    for c, b in zip(cells, boxes):
+        crop = c.crop((max(0, b[0] - pad), max(0, b[1] - pad), min(c.width, b[2] + pad), min(c.height, b[3] + pad)))
+        crops.append(with_alpha(crop).resize((round(crop.width / s), round(crop.height / s)), Image.LANCZOS))
+    cw = max(c.width for c in crops)
+    ch = max(c.height for c in crops)
+    strip = Image.new('RGBA', (cw * len(crops), ch))
+    for i, c in enumerate(crops):
+        strip.paste(c, (i * cw + (cw - c.width) // 2, ch - c.height))
+    save(strip, out_name)
+
+
 def trimmed(name, width, alpha):
     img = Image.open(GEN / f'{name}.png').convert('RGB')
     b = bbox(img, 12)
@@ -115,13 +161,19 @@ def light_strip(name, cols, rows, cell_h):
 player_scale = run_strip('player-run-sheet')
 rival_scale = run_strip('rival-run-sheet')
 # Pose sheets are drawn at a different zoom than the run sheets; match the standing
-# victory pose's height to a run frame so both poses share the runner's scale.
+# victory pose's height to a run frame so it shares the runner's scale. The sheet's
+# crouch is no longer used: the start strip below has its own.
 for sheet, prefix, run_scale in [('poses-sheet', 'player', player_scale), ('rival-poses', 'rival', rival_scale)]:
-    crouch, win = grid(sheet, 2, 1)
+    _, win = grid(sheet, 2, 1)
     wb = bbox(win)
     s = (wb[3] - wb[1]) / (FRAME_H - 24)
-    pose(crouch, s, f'{prefix}-set')
     pose(win, s, f'{prefix}-win')
+    # Start: set, push-off, two drive steps. The last drive step leans a little, so it
+    # stands a bit shorter than a run frame. Both generated drive steps lead with the
+    # same leg, so the second is mirrored.
+    seq_strip(f'{prefix}-start-sheet', 3, (FRAME_H - 24) * 0.92, f'{prefix}-start', flip=(3,))
+    # Finish: line dip, two slowing steps, hands on knees. The upright jog matches a run frame.
+    seq_strip(f'{prefix}-finish-sheet', 1, FRAME_H - 24, f'{prefix}-finish')
 
 img = Image.open(GEN / 'track-clean.png').convert('RGB').resize((720, 1080), Image.LANCZOS)
 save(img, 'track')

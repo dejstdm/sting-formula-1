@@ -1,0 +1,9 @@
+SPRITE SHEET of the SAME rival runner as in the first attached image (same body, dark short hair, dark grey tank top and shorts, white/silver neon contour glow, glowing white shoes).
+Layout: portrait canvas 1024x1536, a 2x2 grid of four equal cells (each 512x768). One full-body figure per cell, head to shoes, centered horizontally, ALL FOUR DRAWN AT THE SAME SCALE (same body size, as if the camera never moved), feet on the same baseline near the bottom of each cell, nothing crossing the cell borders, no grid lines drawn.
+The four cells are four consecutive moments at the FINISH of a sprint, read left-to-right then top-to-bottom, every frame seen directly from BEHIND, the runner moving straight away from the camera:
+1) finish-line dip: mid-stride at full speed, chest thrown forward, torso leaning strongly forward, both arms swung back behind the body.
+2) easing off: upright, slowing down, a short relaxed jogging stride, right foot on the ground, arms low and loose.
+3) almost stopped: upright, a short walking step, left foot on the ground, arms hanging relaxed, shoulders heaving.
+4) exhausted defeat: standing still, bent forward at the hips, both hands resting on the knees, head hanging down, catching breath.
+Character, outfit, glow and camera angle must be identical across all four frames; only the body pose changes. Use the attached images for the character identity (first image) and the art style (second image).
+STYLE (must match the attached reference images): dark cinematic neon look. Pure flat black background (#000000) everywhere outside the subject: no floor, no shadow, no gradient, no vignette, no text, no watermark. Light comes only from glowing neon edges and contours. Glow color: white/silver (#e8eef5), dimmer than a red hero.

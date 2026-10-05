@@ -7,10 +7,12 @@ const SPRITES = [
   'track',
   'player-run',
   'rival-run',
-  'player-set',
-  'rival-set',
   'player-win',
   'rival-win',
+  'player-start',
+  'rival-start',
+  'player-finish',
+  'rival-finish',
   'finish-gate',
   'f1-car',
   'boost-burst',
@@ -59,7 +61,19 @@ const GATE_DEPTH = 0.32;
 const RIVAL_TRUE = 5;
 const RIVAL_DEPTH = 0.35;
 
-export type Pose = 'set' | 'run' | 'win';
+export type Pose = 'set' | 'run' | 'win' | 'push' | 'drive1' | 'drive2' | 'dip' | 'ease1' | 'ease2' | 'lose';
+
+/** Poses that are one frame of a 4-frame strip: the start (crouch to drive steps) or the finish (dip to hands on knees). */
+const STRIP_FRAME: Partial<Record<Pose, ['start' | 'finish', number]>> = {
+  set: ['start', 0],
+  push: ['start', 1],
+  drive1: ['start', 2],
+  drive2: ['start', 3],
+  dip: ['finish', 0],
+  ease1: ['finish', 1],
+  ease2: ['finish', 2],
+  lose: ['finish', 3],
+};
 
 export interface Scene {
   mode: 'intro' | 'countdown' | 'race' | 'finish' | 'result';
@@ -314,7 +328,8 @@ export class World {
     }
     const p = this.project(z, lane);
     const hPx = BODY * p.k;
-    const img = this.art[`${who}-${pose}`];
+    const strip = STRIP_FRAME[pose];
+    const img = this.art[(strip ? `${who}-${strip[0]}` : `${who}-${pose}`) as SpriteName];
     let sx = 0;
     let sw = img.width;
     let dh = hPx;
@@ -323,6 +338,10 @@ export class World {
       sw = img.width / 4;
       sx = (Math.floor(phase) % 4) * sw;
       bob = Math.abs(Math.sin(phase * Math.PI * 0.5)) * hPx * 0.02;
+    } else if (strip) {
+      sw = img.width / 4;
+      sx = strip[1] * sw;
+      dh = (img.height / 320) * hPx;
     } else {
       // Poses are packed at the run frames' scale (320 px per body height).
       dh = (img.height / 320) * hPx;

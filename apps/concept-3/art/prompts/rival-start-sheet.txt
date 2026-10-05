@@ -1,0 +1,9 @@
+SPRITE SHEET of the SAME rival runner as in the first attached image (same body, dark short hair, dark grey tank top and shorts, white/silver neon contour glow, glowing white shoes).
+Layout: portrait canvas 1024x1536, a 2x2 grid of four equal cells (each 512x768). One full-body figure per cell, head to shoes, centered horizontally, ALL FOUR DRAWN AT THE SAME SCALE (same body size, as if the camera never moved), feet on the same baseline near the bottom of each cell, nothing crossing the cell borders, no grid lines drawn.
+The four cells are four consecutive frames of a sprint START, read left-to-right then top-to-bottom, every frame seen directly from BEHIND, the runner launching straight away from the camera:
+1) "set": crouched in the sprinter start position, both hands on the ground, hips raised, exactly like the crouch in the second attached image.
+2) push-off: hands just leaving the ground, torso still low and almost horizontal, back leg extended hard behind, front knee bent, arms starting to swing.
+3) first drive step: torso leaning strongly forward (about 45 degrees), right knee driving up and forward, left leg fully extended pushing off the ground, left arm forward, right arm back.
+4) second drive step: torso a bit more upright (about 25 degrees lean), left knee driving forward, right leg pushing off behind, right arm forward, left arm back.
+Character, outfit, glow and camera angle must be identical across all four frames; only the body pose changes. Use the attached images for the character identity (first image) and for the crouch and the art style (second image).
+STYLE (must match the attached reference images): dark cinematic neon look. Pure flat black background (#000000) everywhere outside the subject: no floor, no shadow, no gradient, no vignette, no text, no watermark. Light comes only from glowing neon edges and contours. Glow color: white/silver (#e8eef5), dimmer than a red hero.

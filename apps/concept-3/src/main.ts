@@ -76,13 +76,27 @@ function setState(s: State) {
   stateT = 0;
 }
 
+/**
+ * One runner's pose. Start and finish frames are keyed to distance and speed,
+ * not time, so they stay in step with slow motion and hit-stop.
+ */
+function runnerPose(pos: number, coast: number, won: boolean): Pose {
+  if (state === 'intro' || state === 'launch' || state === 'countdown' || state === 'loading') return 'set';
+  // Out of the blocks: push off, then two drive steps before the run cycle takes over.
+  if (pos < 0.7) return 'push';
+  if (pos < 1.6) return 'drive1';
+  if (pos < 2.6) return 'drive2';
+  const finishing = state === 'finish' || state === 'result';
+  // Chest dip through the line.
+  if (pos > RACE.length - 1 && pos < RACE.length + 0.8 && (!finishing || coast > 4)) return 'dip';
+  if (!finishing || coast > 4) return 'run';
+  // Easing off: alternate the two slowing steps, then stop and celebrate or catch breath.
+  if (coast > 0.5) return Math.floor(pos / 0.6) % 2 ? 'ease2' : 'ease1';
+  return won ? 'win' : 'lose';
+}
+
 function poses(): [Pose, Pose] {
-  if (state === 'intro' || state === 'launch' || state === 'countdown' || state === 'loading') return ['set', 'set'];
-  if (state === 'finish' || state === 'result') {
-    // Winner celebrates once they've coasted to a stop.
-    return [win && playerCoast < 0.5 ? 'win' : 'run', !win && rivalCoast < 0.5 ? 'win' : 'run'];
-  }
-  return ['run', 'run'];
+  return [runnerPose(visPlayer, playerCoast, win === true), runnerPose(visRival, rivalCoast, win === false)];
 }
 
 function scene(): Scene {
@@ -378,7 +392,7 @@ function frame(now: number) {
   if (state === 'launch') updateLaunch();
   if (state === 'countdown') updateCountdown();
   // Game time: slows inside Boost Zones, nearly freezes for a beat on a Perfect.
-  let scale = state === 'race' ? race.timeScale : cinematicScale;
+  let scale = state === 'race' ? race.timeScale * launchScale() : cinematicScale;
   if (hitstop > 0) {
     hitstop -= dt;
     scale *= 0.06;
@@ -447,15 +461,18 @@ function updateCountdown() {
 
 function updateFinish(dt: number, gdt: number) {
   const t = stateT;
-  // Runners coast to a stop in game time, so slow motion slows them too.
-  playerCoast = Math.max(0, playerCoast - gdt * 7);
+  // Runners coast to a stop in game time, so slow motion slows them too. The winner
+  // brakes in real time instead: in bullet time they would still be running when the
+  // result card covers them, and the arms-up pose would never be seen.
+  playerCoast = Math.max(0, playerCoast - (win ? dt * 8 : gdt * 7));
   rivalCoast = Math.max(0, rivalCoast - gdt * 7);
   visPlayer += playerCoast * gdt;
   visRival += rivalCoast * gdt;
 
   if (!win) {
     cinematicScale = t < 1 ? 0.4 : Math.min(1, 0.4 + (t - 1) * 1.2);
-    if (state === 'finish' && t > 2.2) showResult();
+    // Long enough to see the loser stop and bend over, hands on knees.
+    if (state === 'finish' && t > 3) showResult();
     return;
   }
 
@@ -489,7 +506,17 @@ function updateFinish(dt: number, gdt: number) {
     }
     if (car > visPlayer + 160) car = null;
   }
-  if (state === 'finish' && t > 3.4) showResult();
+  if (state === 'finish' && t > 3.9) showResult();
+}
+
+/**
+ * Slow motion off the blocks: the runners reach full speed at once, so the start
+ * frames would be gone in under 0.3 s. Easing game time in over the first 0.3 race
+ * seconds stretches that to about 0.7 s. Both runners slow alike, so the race is unchanged.
+ */
+function launchScale() {
+  const k = Math.min(1, race.t / 0.3);
+  return 0.25 + 0.75 * k * k;
 }
 
 function damp(a: number, b: number, k: number, dt: number) {

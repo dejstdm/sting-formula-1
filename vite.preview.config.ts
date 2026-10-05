@@ -1,6 +1,6 @@
 import { defineConfig } from 'vite';
 
-/** Serves the assembled dist/ (concept-1 at /concept-1/, redirect at /). */
+/** Serves the assembled dist/: home at /, each concept at /concept-N/. */
 export default defineConfig({
   preview: {
     host: true,

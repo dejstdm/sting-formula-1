@@ -4,7 +4,9 @@ A showcase prototype of the game proposed in `2026-09-30-STING_x_F1_2027-Engagem
 
 This build is the game only. It has no backend, registration, Proof of Purchase or rewards, and uses no licensed F1 assets.
 
-Concept 1 is the 3D build, served at `/concept-1/`. Concept 2 is the canvas build, served at `/concept-2/`. Concept 3 is the 2.5D build at `/concept-3/`: the deck's own view, with neon runners seen from behind on a portrait track, drawn as sprites with Canvas 2D so it runs on low-end phones. Its art is generated (see `apps/concept-3/art/`). `/` redirects to `/concept-1/` and keeps the query string, so `/?name=MAX` still opens concept 1.
+`/` is a page that lists the three concepts, with a screenshot and a short note on how each one is built. Concept 1 is the 3D build at `/concept-1/`. Concept 2 is the side-view canvas build at `/concept-2/`. Concept 3 is the 2.5D build at `/concept-3/`: the deck's own view, with neon runners seen from behind, drawn as sprites with Canvas 2D so it runs on low-end phones. Its art is generated (see `apps/concept-3/art/`).
+
+An old link such as `/?name=MAX` still opens concept 1 and keeps the query string. The same happens for `?auto=`.
 
 `game-v2-asstest/Image001.jpg` is the framed-layout reference for concept 2. The game does not load it.
 
@@ -19,8 +21,10 @@ npm install
 npm run dev          # http://localhost:5173/concept-1/  (also on your LAN)
 npm run dev:concept-2 # http://localhost:5174/concept-2/
 npm run dev:concept-3 # http://localhost:5175/concept-3/
+npm run dev:home      # http://localhost:5176/  (the concept list only)
 npm run build        # each app builds on its own, then dist/ is assembled
-npm run preview      # http://localhost:4173/concept-1/ from that dist/
+npm run preview      # http://localhost:4173/ from that dist/
+npm run shots        # refresh the home-page screenshots (needs a built dist/)
 npm run sim          # win/lose for all 27 Boost combinations
 ```
 
@@ -77,9 +81,13 @@ apps/concept-1/src/world/          track, runners, F1 car, can, particles, light
 apps/concept-1/src/audio/sound.ts  synthesised music and SFX
 apps/concept-1/src/ui/             DOM HUD and styles
 apps/concept-1/scripts/sim.ts      balancing harness
-scripts/assemble.mjs               builds every app into its own dist, then copies into dist/
-vercel.json                        one project, trailing slash, / redirects to /concept-1/
+apps/home/                        the concept list at /
+scripts/assemble.mjs               builds every app, then copies them into dist/
+scripts/screenshots.mjs            phone shots of a Perfect Boost, for the home page
+vercel.json                        one project, trailing slash, / serves the home page
 ```
+
+To add a concept: build it as `apps/concept-N/` with `base: '/concept-N/'`, add it to the list in `scripts/assemble.mjs` and `apps/home/src/concepts.js`, then `npm run build` and `npm run shots`.
 
 ## Balance (v1)
 

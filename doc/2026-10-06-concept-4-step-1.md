@@ -37,7 +37,7 @@ Answered by Dejan on 2026-10-06:
 - **Energy:** keep the placeholders for now (drains 14% a second; Too Early and Too Late refill 45%).
 - **A missed Boost** (no tap at all) shows Too Late and a grey bolt. Keep.
 - **Timing windows:** keep. Perfect within ±120 ms of the ring closing, early before that, late up to 400 ms after, 50 ms latency compensation. The ring takes 1 s to close, as in the Figma motion.
-- **Tap target:** the Boost button only (Figma shows the can button). The touch area is an 80 px circle around the can, a little larger than the 112 px face. Space and Enter still work, for the arcade button.
+- **Tap target:** the Boost button only (Figma shows the can button). The touch area is a circle of 80 px radius around the can, a little larger than the 112 px face. Space and Enter still work, for the arcade button.
 
 Still open:
 

@@ -32,6 +32,8 @@ export class Hud {
   private els: Record<string, HTMLElement> = {};
   private lastClock = '';
   private lastPct = '';
+  private lastFill = '';
+  private pctAt = 0;
 
   onStart?: () => void;
   onAgain?: () => void;
@@ -61,14 +63,14 @@ export class Hud {
       <section class="screen hud">
         <div class="top">
           <div class="names"><b class="me">${name}</b><span>vs.</span><b class="rival">RIVAL</b></div>
-          <div class="progress"><span class="dot rival"></span><span class="dot me"></span></div>
+          <div class="progress"><span class="lane rival"><i class="dot rival"></i></span><span class="lane me"><i class="dot me"></i></span></div>
           <div class="clock">0:00</div>
         </div>
         <div class="zone-label">BOOST ZONE</div>
         <div class="feedback"></div>
         <div class="bottom">
           <div class="meter">
-            <div class="meter-pct">100<small>%</small></div>
+            <div class="meter-pct"><span class="meter-num">100</span><small>%</small></div>
             <div class="meter-can"><div class="meter-fill"></div><div class="meter-shine"></div></div>
             <div class="meter-label">ENERGY</div>
           </div>
@@ -105,7 +107,7 @@ export class Hud {
     // Sound lives in the page header, outside the game, so tapping it never counts as a Boost.
     (document.querySelector('.site-end') ?? root).append(this.mute);
 
-    for (const sel of ['.clock', '.dot.me', '.dot.rival', '.meter', '.meter-fill', '.meter-pct', '.boost', '.ring.closing', '.zone-label', '.boost-btn']) {
+    for (const sel of ['.clock', '.lane.me', '.lane.rival', '.meter', '.meter-fill', '.meter-num', '.boost', '.ring.closing', '.zone-label', '.boost-btn']) {
       this.els[sel] = this.hud.querySelector(sel)!;
     }
 
@@ -151,14 +153,20 @@ export class Hud {
     // Only touch the DOM when a value actually changes; cheap phones feel every layout.
     const clock = `0:${String(Math.floor(Math.max(0, s.t))).padStart(2, '0')}`;
     if (clock !== this.lastClock) this.els['.clock'].textContent = this.lastClock = clock;
-    // Plain percentages work in every browser; two tiny dots are cheap to lay out.
-    const p = (v: number) => `${Math.min(100, (v / s.length) * 100)}%`;
-    this.els['.dot.me'].style.left = p(s.player);
-    this.els['.dot.rival'].style.left = p(s.rival);
+    // Each dot rides a full-width lane moved with a transform, so the per-frame move skips layout.
+    const p = (v: number) => `translateX(${Math.min(100, (v / s.length) * 100)}%)`;
+    this.els['.lane.me'].style.transform = p(s.player);
+    this.els['.lane.rival'].style.transform = p(s.rival);
 
+    // Each new number costs a layout. Ten a second reads as smooth; the fill bar moves every frame.
     const pct = String(Math.round(s.energy));
-    if (pct !== this.lastPct) this.els['.meter-pct'].innerHTML = `${(this.lastPct = pct)}<small>%</small>`;
-    this.els['.meter-fill'].style.transform = `scaleY(${Math.max(0.02, s.energy / 100)})`;
+    const now = performance.now();
+    if (pct !== this.lastPct && (now - this.pctAt > 100 || pct === '100' || pct === '0')) {
+      this.els['.meter-num'].textContent = this.lastPct = pct;
+      this.pctAt = now;
+    }
+    const fill = `scaleY(${Math.max(0.02, s.energy / 100).toFixed(3)})`;
+    if (fill !== this.lastFill) this.els['.meter-fill'].style.transform = this.lastFill = fill;
     this.els['.meter'].classList.toggle('low', s.energy < 30);
     this.els['.meter'].classList.toggle('max', s.energy > 97);
 

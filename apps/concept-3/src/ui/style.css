@@ -240,6 +240,7 @@ body {
   height: 13px;
   background: var(--ink);
 }
+.lane { position: absolute; inset: 0; will-change: transform; }
 .dot {
   position: absolute;
   left: 0;
@@ -303,10 +304,32 @@ body {
   inset: 0 55% 0 18%;
   background: linear-gradient(90deg, rgba(255, 255, 255, 0), rgba(255, 255, 255, 0.35), rgba(255, 255, 255, 0));
 }
-.meter-pct { font: 400 22px/1 var(--display); font-variant-numeric: tabular-nums; }
+/*
+ * The number changes almost every frame while energy drains. A fixed, strictly contained box
+ * makes it a relayout boundary, so each change lays out this box instead of the whole page.
+ */
+.meter-pct {
+  width: 48px;
+  height: 22px;
+  contain: strict;
+  text-align: center;
+  white-space: nowrap;
+  font: 400 22px/1 var(--display);
+  font-variant-numeric: tabular-nums;
+}
 .meter-pct small { font-size: 12px; margin-left: 1px; }
 .meter-label { font-weight: 700; font-size: 12px; letter-spacing: 0.22em; color: var(--mute); }
-.meter.low .meter-can { border-color: rgba(255, 70, 70, 0.9); animation: lowpulse 0.55s ease-in-out infinite; }
+.meter.low .meter-can { border-color: rgba(255, 70, 70, 0.9); }
+/* The low-energy pulse fades a glow layer in and out: opacity runs on the compositor, a box-shadow animation repaints every frame. */
+.meter-can::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  box-shadow: inset 0 0 14px rgba(255, 30, 30, 0.9);
+  opacity: 0;
+}
+.meter.low .meter-can::after { animation: lowpulse 0.55s ease-in-out infinite; }
 .meter.low .meter-fill { background: linear-gradient(0deg, #3a0008, #7a1020); box-shadow: none; }
 .meter.low .meter-pct { color: #ff6262; }
 .meter.max .meter-can { border-color: #fff; box-shadow: 0 0 22px rgba(255, 60, 50, 0.8); }
@@ -452,7 +475,7 @@ body {
 @keyframes breathe { 50% { transform: scale(1.05); } }
 @keyframes hover { 50% { transform: translateY(-2.5%) rotate(-1.5deg); } }
 @keyframes blink { 50% { opacity: 0.35; } }
-@keyframes lowpulse { 50% { box-shadow: 0 0 22px rgba(255, 30, 30, 0.8); } }
+@keyframes lowpulse { 50% { opacity: 1; } }
 @keyframes pop {
   0% { opacity: 0; transform: scale(1.6); }
   25% { opacity: 1; transform: scale(1); }
@@ -469,7 +492,7 @@ body {
 @keyframes nudge { 25% { transform: translateX(-6px); } 75% { transform: translateX(6px); } }
 
 @media (prefers-reduced-motion: reduce) {
-  .can, .can-wrap::before, .cta, .meter.low .meter-can, .hud.zone .zone-label { animation: none; }
+  .can, .can-wrap::before, .cta, .meter.low .meter-can::after, .hud.zone .zone-label { animation: none; }
 }
 
 .debug {

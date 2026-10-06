@@ -46,7 +46,20 @@ Builds concept 3, serves it with `vite preview`, and plays one full race (`?auto
 
 It reports load metrics (TTFB, FCP, LCP, CLS, time until the game is playable, bytes, JS size, heap) and frame pacing for each phase of the race (average FPS, median, p95 and p99 frame times, worst frame, janky frames, frames under 30 fps, long tasks). It also reports main-thread time split into script, layout and style, plus the slowest animation frames and the script behind each one. Results go to `apps/concept-3/perf-results/<time>/report.md` and `report.json`. A profile that misses its budget fails the run with exit code 1. `--trace` saves a Chrome trace per run; open it in the DevTools Performance panel.
 
-Rendering uses the host GPU. `--swiftshader` switches to software rendering, which is slower than any phone and mostly measures the rasteriser. CPU throttling slows only the page's main thread, not the GPU process, so the numbers come from a desktop GPU and are not a real phone measurement. Results vary by about 2x between runs on a busy machine, so use `--runs=3` before you compare.
+**Run it from Windows on a WSL setup.** Chromium inside WSL has no usable GPU. Headless it rasterises the canvas on the page's main thread, so CPU throttling slows the drawing too and the throttled numbers come out 3 to 5 times too low. Headed, WSLg's window path caps even unthrottled runs near 30 fps. Serve the build from WSL and drive Windows Chrome with Windows Node:
+
+```bash
+# WSL, in apps/concept-3
+npm run build && node ../../node_modules/vite/bin/vite.js preview --host 0.0.0.0 --port 4175 --strictPort
+```
+
+```bat
+:: Windows cmd
+set CHROME_PATH=C:\Program Files\Google\Chrome\Application\chrome.exe
+node \\wsl.localhost\Ubuntu-22.04\home\dejan\projects\games\sting-formula-1\apps\concept-3\scripts\perf.mjs --url=http://localhost:4175/concept-3/ --runs=3
+```
+
+Each report prints what `chrome://gpu` says about the canvas. If it says "Software only", the throttled numbers are not valid. `--render=gpu|swiftshader|software` picks the mode (gpu, the default, opens a window). `--variant=no-hud,no-sprites,no-css-fx,no-hidden-anim` runs A/B experiments that switch one cost off, interleaved with the baseline. The test browser is muted. Results vary between runs, so use `--runs=3` before you compare. Findings so far are in `doc/2026-10-06-concept-3-performance.md`.
 
 ## URL flags
 

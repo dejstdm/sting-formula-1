@@ -7,14 +7,18 @@
 //
 //   --profile=low,mid      run only these profiles (default: all)
 //   --runs=3               repeat each profile, report the median run
+//   --variant=a,b          A/B experiments that switch one cost off (see VARIANTS); baseline always runs too
 //   --trace                save a Chrome trace per run (open it in the DevTools Performance panel)
-//   --headed               show the browser window
-//   --swiftshader          render in software (SwiftShader) instead of on the host GPU
+//   --render=gpu           gpu (default): headed window on the host GPU, the only mode with a real GPU
+//                          under WSL or Linux. swiftshader: headless, GPU pipeline emulated on the CPU.
+//                          software: headless, canvas rasterised on the page's main thread.
 //   --url=http://...       test a deployed build instead of a local vite preview
 //   --no-build             reuse dist/ as it is
 //
-// CPU throttling slows the renderer's main thread only. Canvas rasterising happens in
-// the GPU process, which is not throttled, so treat GPU-bound numbers with care.
+// CPU throttling slows the renderer's main thread only. With a GPU, canvas rasterising
+// happens in the GPU process, which is not throttled, as on a phone. Without one, Chrome
+// rasterises the canvas on the main thread, so throttled numbers come out far too low.
+// The report records what chrome://gpu says, so check its Canvas line before trusting a run.
 import { spawn, spawnSync } from 'node:child_process';
 import { existsSync, readdirSync } from 'node:fs';
 import { mkdir, writeFile } from 'node:fs/promises';
@@ -90,6 +94,27 @@ const PROFILES = [
     budget: { fps: 25, p95: 60, drops: 15, readyMs: 25000 },
   },
 ];
+
+/**
+ * Experiments for finding where frame time goes. Each one removes a single cost from the
+ * page without touching the game code, so the gap to the baseline is what that cost was.
+ */
+const VARIANTS = {
+  // The DOM HUD and the screens over the canvas: no layout, style or compositing for them.
+  'no-hud': { css: '#ui { display: none !important; }' },
+  // Every drawImage call on the game canvas becomes a no-op: no sprite rasterising.
+  'no-sprites': {
+    js: () => {
+      CanvasRenderingContext2D.prototype.drawImage = function () {};
+    },
+  },
+  // CSS glow effects: filters, box and text shadows.
+  'no-css-fx': { css: '* , *::before, *::after { filter: none !important; box-shadow: none !important; text-shadow: none !important; }' },
+  // Infinite CSS animations on screens that are hidden (visibility: hidden still animates).
+  'no-hidden-anim': {
+    css: '.screen:not(.on), .screen:not(.on) *, .screen:not(.on) *::before, .screen:not(.on) *::after { animation: none !important; }',
+  },
+};
 
 function chromePath() {
   if (process.env.CHROME_PATH && existsSync(process.env.CHROME_PATH)) return process.env.CHROME_PATH;
@@ -238,6 +263,16 @@ async function runProfile(browser, profile, baseUrl, runIndex, outDir) {
     userAgent: profile.mobile ? MOBILE_UA : undefined,
   });
   await context.addInitScript(probe);
+  const variant = profile.variant && VARIANTS[profile.variant];
+  if (variant?.js) await context.addInitScript(variant.js);
+  if (variant?.css)
+    await context.addInitScript((css) => {
+      document.addEventListener('DOMContentLoaded', () => {
+        const style = document.createElement('style');
+        style.textContent = css;
+        document.head.append(style);
+      });
+    }, variant.css);
   const page = await context.newPage();
   const errors = [];
   page.on('pageerror', (err) => errors.push(String(err)));
@@ -373,7 +408,8 @@ function markdown(rows, meta) {
   const lines = [
     `# Concept 3 performance, ${meta.at}`,
     '',
-    `Chromium ${meta.browser}, ${meta.gpu ? 'host GPU' : 'SwiftShader (software GL)'}, ${meta.headless ? 'headless' : 'headed'}. URL: ${meta.url}`,
+    `Chromium ${meta.browser}, render mode \`${meta.render}\`. URL: ${meta.url}`,
+    `Canvas: ${meta.gpu.canvas}. Compositing: ${meta.gpu.compositing}. Renderer: ${meta.gpu.renderer}`,
     `Host: ${meta.host}`,
     '',
     '## Race phase',
@@ -480,41 +516,94 @@ if (!args.url) {
   await waitFor(baseUrl);
 }
 
-// SwiftShader is far slower than any phone GPU, so it measures the CPU rasteriser rather than the game.
-const gpuArgs = args.swiftshader
-  ? ['--use-gl=angle', '--use-angle=swiftshader', '--ignore-gpu-blocklist']
-  : ['--ignore-gpu-blocklist', '--enable-gpu-rasterization'];
+// Headless Chrome on Linux gets no GPU at all, so the gpu mode opens a window. ANGLE's GL
+// backend reaches the host GPU through Mesa (D3D12 under WSL).
+const RENDER = {
+  gpu: { headless: false, args: ['--use-gl=angle', '--use-angle=gl', '--ignore-gpu-blocklist', '--enable-gpu-rasterization'] },
+  swiftshader: { headless: true, args: ['--use-gl=angle', '--use-angle=swiftshader', '--ignore-gpu-blocklist'] },
+  software: { headless: true, args: ['--disable-gpu'] },
+};
+const renderMode = typeof args.render === 'string' ? args.render : 'gpu';
+if (!RENDER[renderMode]) {
+  console.error(`No such render mode: ${renderMode}. Pick from: ${Object.keys(RENDER).join(', ')}`);
+  process.exit(1);
+}
 const browser = await chromium.launch({
   executablePath,
-  headless: !args.headed,
+  headless: RENDER[renderMode].headless,
   args: [
-    ...gpuArgs,
+    ...RENDER[renderMode].args,
     '--disable-dev-shm-usage',
     // Keep timers and rAF running at full rate even if the window loses focus.
     '--disable-background-timer-throttling',
     '--disable-renderer-backgrounding',
     '--disable-backgrounding-occluded-windows',
     '--autoplay-policy=no-user-gesture-required',
+    // The game plays music and effects; the test needs the audio graph running, not the speakers.
+    '--mute-audio',
   ],
 });
+
+/** What Chrome itself says about acceleration, so a report cannot claim a GPU it did not have. */
+async function gpuStatus() {
+  const page = await browser.newPage();
+  try {
+    await page.goto('chrome://gpu');
+    const read = () => page.evaluate(() => (document.querySelector('info-view')?.shadowRoot ?? document).textContent ?? '');
+    // The feature list fills in after the page loads.
+    let text = '';
+    for (let i = 0; i < 20 && !/Canvas:/.test(text); i++) {
+      await page.waitForTimeout(250);
+      text = await read();
+    }
+    const line = (name) => text.match(new RegExp(`\\* ${name}: ([^*]*?)(?=\\*|Version Information|$)`))?.[1]?.trim() ?? 'unknown';
+    return {
+      canvas: line('Canvas'),
+      compositing: line('Compositing'),
+      renderer: text.match(/GL_RENDERER\s*([^\n]*?)\s*GL_VERSION/)?.[1]?.replace(/^:/, '').trim() ?? 'unknown',
+    };
+  } catch {
+    return { canvas: 'unknown', compositing: 'unknown', renderer: 'unknown' };
+  } finally {
+    await page.close();
+  }
+}
+const gpu = await gpuStatus();
+console.log(`Render mode ${renderMode}. Canvas: ${gpu.canvas}. Renderer: ${gpu.renderer}`);
+if (/software/i.test(gpu.canvas)) console.warn('Warning: the canvas is not GPU-accelerated, so throttled results are far worse than on a phone.');
 
 const stamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
 const outDir = path.join(appDir, 'perf-results', stamp);
 await mkdir(outDir, { recursive: true });
 
+const variants = typeof args.variant === 'string' ? args.variant.split(',') : [];
+for (const v of variants) {
+  if (!VARIANTS[v]) {
+    console.error(`No such variant: ${v}. Pick from: ${Object.keys(VARIANTS).join(', ')}`);
+    process.exit(1);
+  }
+}
+const jobs = profiles.flatMap((p) => [
+  p,
+  ...variants.map((v) => ({ ...p, id: `${p.id}+${v}`, label: `${p.label} [${v}]`, variant: v })),
+]);
+
 const rows = [];
 try {
-  for (const profile of profiles) {
-    const results = [];
-    for (let i = 0; i < runs; i++) {
-      process.stdout.write(`${profile.label}, run ${i + 1}/${runs}... `);
-      const r = await runProfile(browser, profile, baseUrl, i, outDir);
-      results.push(r);
+  const results = new Map(jobs.map((j) => [j, []]));
+  // Interleave runs (all jobs once, then again) so slow drift on the host hits every job alike.
+  for (let i = 0; i < runs; i++) {
+    for (const job of jobs) {
+      process.stdout.write(`${job.label}, run ${i + 1}/${runs}... `);
+      const r = await runProfile(browser, job, baseUrl, i, outDir);
+      results.get(job).push(r);
       console.log(`race ${r.race.fps} fps, p95 ${r.race.p95} ms, playable at ${r.load.ready} ms`);
     }
+  }
+  for (const [job, list] of results) {
     // Median run by race FPS, so one noisy run does not decide the verdict.
-    const result = [...results].sort((a, b) => a.race.fps - b.race.fps)[Math.floor(results.length / 2)];
-    rows.push({ profile, result, runs: results, fails: check(result, profile.budget) });
+    const result = [...list].sort((a, b) => a.race.fps - b.race.fps)[Math.floor(list.length / 2)];
+    rows.push({ profile: job, result, runs: list, fails: check(result, job.budget) });
   }
 } finally {
   await browser.close();
@@ -525,8 +614,8 @@ const meta = {
   at: new Date().toISOString(),
   url: baseUrl,
   browser: browser.version(),
-  gpu: !args.swiftshader,
-  headless: !args.headed,
+  render: renderMode,
+  gpu,
   host: `${os.cpus()[0]?.model ?? 'unknown CPU'}, ${os.cpus().length} threads, ${os.platform()} ${os.release()}`,
 };
 const md = markdown(rows, meta);

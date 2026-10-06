@@ -4,7 +4,7 @@ A showcase prototype of the game proposed in `2026-09-30-STING_x_F1_2027-Engagem
 
 This build is the game only. It has no backend, registration, Proof of Purchase or rewards, and uses no licensed F1 assets.
 
-`/` is a page that lists the three concepts, with a screenshot and a short note on how each one is built. Concept 1 is the 3D build at `/concept-1/`. Concept 2 is the side-view canvas build at `/concept-2/`. Concept 3 is the 2.5D build at `/concept-3/`: the deck's own view, with neon runners seen from behind, drawn as sprites with Canvas 2D so it runs on low-end phones. Its art is generated (see `apps/concept-3/art/`).
+`/` is a page that lists the four concepts, with a screenshot and a short note on how each one is built. Concept 1 is the 3D build at `/concept-1/`. Concept 2 is the side-view canvas build at `/concept-2/`. Concept 3 is the 2.5D build at `/concept-3/`: the deck's own view, with neon runners seen from behind, drawn as sprites with Canvas 2D so it runs on low-end phones. Its art is generated (see `apps/concept-3/art/`). Concept 4 at `/concept-4/` builds the client's Figma design with PixiJS on WebGL; so far it has the race scene only (see "Concept 4" below).
 
 An old link such as `/?name=MAX` still opens concept 1 and keeps the query string. The same happens for `?auto=`.
 
@@ -21,6 +21,7 @@ npm install
 npm run dev          # http://localhost:5173/concept-1/  (also on your LAN)
 npm run dev:concept-2 # http://localhost:5174/concept-2/
 npm run dev:concept-3 # http://localhost:5175/concept-3/
+npm run dev:concept-4 # http://localhost:5177/concept-4/
 npm run dev:home      # http://localhost:5176/  (the concept list only)
 npm run build        # each app builds on its own, then dist/ is assembled
 npm run preview      # http://localhost:4173/ from that dist/
@@ -60,6 +61,27 @@ node \\wsl.localhost\Ubuntu-22.04\home\dejan\projects\games\sting-formula-1\apps
 ```
 
 Each report prints what `chrome://gpu` says about the canvas. If it says "Software only", the throttled numbers are not valid. `--render=gpu|swiftshader|software` picks the mode (gpu, the default, opens a window). `--variant=no-hud,no-sprites,no-css-fx,no-hidden-anim` runs A/B experiments that switch one cost off, interleaved with the baseline. The test browser is muted. Results vary between runs, so use `--runs=3` before you compare. Findings so far are in `doc/2026-10-06-concept-3-performance.md`.
+
+## Concept 4
+
+The client's Figma design (file `n5qDtsydLp1HXcWjsFPJfD`), built with PixiJS 8 on WebGL. Step 1 is one race scene: the moving road, both runners with a run cycle and scaled by distance, the HUD, and the Boost effects, including the strongest one (a Perfect Boost). It loops the 15-second race. The surrounding screens, sound and the F1 finish come later. Start with `doc/2026-10-06-concept-4-handoff.md` and `doc/2026-10-06-concept-4-step-1.md`.
+
+- Everything that changes during the race is drawn by Pixi on the GPU, the HUD included. The page has no DOM layout while racing.
+- The road is the Figma backdrop with a small shader that scrolls the ground in true perspective (`src/race/road.ts`). The art's dashes fit a ground plane to within 1%, so it loops without a seam.
+- The Boost button, bolts, energy bar, banner and flash use the Figma SVGs and measurements. The display font is Molot, as in Figma.
+- The run cycles are generated to match the designer's runners (`apps/concept-4/art/`).
+
+| Flag | Effect |
+|---|---|
+| `?auto=PEL` | Plays itself: P = perfect, E = early, L = late, M = miss, one letter per Boost. `?auto` alone means PPP. |
+| `?name=MAX` | The player's name in the HUD. Default MAX, as in Figma. |
+| `?debug` | Renderer, fps, worst frame, resolution and megapixels. |
+| `?res=1.5` | Highest render resolution in device pixels (default 2). |
+| `?px=1500000` | Device pixels per frame; resolution drops to fit (default 2,000,000). |
+
+Space, Enter or a tap anywhere on the screen counts as a Boost tap.
+
+The performance test works like concept 3's, on port 4177: `npm run perf:concept-4`, or from Windows as above with `apps\concept-4\scripts\perf.mjs --url=http://localhost:4177/concept-4/`. It plays one 15-second lap with `?auto=PPP`. `--variant=res1,res1.5` compares resolution caps.
 
 ## URL flags
 
@@ -114,6 +136,10 @@ apps/concept-1/src/world/          track, runners, F1 car, can, particles, light
 apps/concept-1/src/audio/sound.ts  synthesised music and SFX
 apps/concept-1/src/ui/             DOM HUD and styles
 apps/concept-1/scripts/sim.ts      balancing harness
+apps/concept-4/src/race/scene.ts   step 1 race loop, placeholder numbers in DEMO
+apps/concept-4/src/race/track.ts   ground-plane fit of the Figma backdrop, runner placement
+apps/concept-4/src/race/road.ts    shader that scrolls the backdrop's road
+apps/concept-4/art/                Figma downloads, run-cycle generation and packing
 apps/home/                        the concept list at /
 scripts/assemble.mjs               builds every app, then copies them into dist/
 scripts/screenshots.mjs            phone shots of a Perfect Boost, for the home page

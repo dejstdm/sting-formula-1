@@ -20,7 +20,7 @@ function run(command, args) {
 await rm(published, { recursive: true, force: true });
 await mkdir(published, { recursive: true });
 
-for (const app of ['concept-1', 'concept-2', 'concept-3']) {
+for (const app of ['concept-1', 'concept-2', 'concept-3', 'concept-4']) {
   await run('npm', ['run', 'build', '-w', app]);
   await cp(path.join(root, 'apps', app, 'dist'), path.join(published, app), { recursive: true });
 }
@@ -31,4 +31,4 @@ for (const name of await readdir(homeDist)) {
   await cp(path.join(homeDist, name), path.join(published, name), { recursive: true });
 }
 
-console.log('Published dist/ (home at /, concepts at /concept-1/, /concept-2/, /concept-3/)');
+console.log('Published dist/ (home at /, concepts at /concept-1/ to /concept-4/)');

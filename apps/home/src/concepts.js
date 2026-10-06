@@ -30,4 +30,14 @@ export const concepts = [
     status: 'Closest to the deck, and the one aimed at low-end phones.',
     shot: 'shots/concept-3.webp',
   },
+  {
+    id: 'concept-4',
+    name: 'Concept 4',
+    pitch: 'The client’s Figma design, running: red, black and white, seen from behind.',
+    how: 'The track, HUD and Boost button come straight from the designer’s Figma file. A shader scrolls the illustrated road in true perspective. The run cycles are generated to match the designer’s runners.',
+    uses: 'PixiJS on WebGL, TypeScript and Vite. Everything that moves each frame is drawn on the GPU, with no page layout in the race. First step: one race scene, no sound yet.',
+    size: '0.6 MB',
+    status: 'Work in progress: the race scene only, waiting for a test on real phones.',
+    shot: 'shots/concept-4.webp',
+  },
 ];

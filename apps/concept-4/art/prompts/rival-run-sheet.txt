@@ -1,0 +1,10 @@
+SPRITE SHEET of the SAME male runner as in the attached reference image: same dark grey and black compression suit with white side panels and thin red piping, same shaved grey head, same white sneakers, same proportions. Full-body video game character seen from directly BEHIND, mid-sprint, running straight away from the camera, endless-runner back view like Temple Run (no face visible), dynamic forward lean.
+Layout: portrait canvas 1024x1536, a 2x2 grid of four equal cells (each 512x768). One full-body figure per cell, head to shoes, centered, same size and same height in every cell, feet near the bottom of each cell, nothing crossing the cell borders, no grid lines drawn.
+The four cells are four consecutive frames of one smooth sprinting cycle, read left-to-right then top-to-bottom:
+1) left foot planted under the body, right leg swinging forward (right shoe sole visible lifted behind), left arm forward, right arm back.
+2) flight / passing pose: right knee driving up, left leg pushing off behind, arms crossing.
+3) right foot planted, left leg swinging forward, right arm forward (exact mirror of frame 1).
+4) flight / passing pose: left knee driving up (exact mirror of frame 2).
+Character, outfit, colours and camera angle must be identical across all four frames; only the limbs change.
+STYLE (must match the reference): graphic poster illustration, bold flat vector shapes, hard-edged cel shading in greys and black, clean white highlights, crisp black outlines. Strict palette for the runner: black, greys, white, thin red #FF0000 piping only.
+BACKGROUND: perfectly flat pure chroma green #00FF00 everywhere outside the figure, no floor, no ground shadow, no gradient, no text, no logos, no watermark. Never use green on the runner.

@@ -33,3 +33,6 @@ Thumbs.db
 
 # Images pulled from the client deck, used only as generation references
 apps/concept-3/art/ref/deck-*
+
+# Performance test output (reports and Chrome traces)
+perf-results

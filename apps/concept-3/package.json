@@ -9,7 +9,8 @@
     "preview": "vite preview --host --port 4175",
     "art": "python3 art/pack.py",
     "sim": "node scripts/sim.ts",
-    "human": "node scripts/human.ts"
+    "human": "node scripts/human.ts",
+    "perf": "node scripts/perf.mjs"
   },
   "devDependencies": {
     "typescript": "^7.0.2",

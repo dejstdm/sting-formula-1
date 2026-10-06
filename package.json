@@ -14,7 +14,8 @@
     "build": "node scripts/assemble.mjs",
     "preview": "vite preview --config vite.preview.config.ts --host --port 4173",
     "sim": "npm run sim -w concept-1",
-    "human": "npm run human -w concept-1"
+    "human": "npm run human -w concept-1",
+    "perf:concept-3": "npm run perf -w concept-3 --"
   },
   "devDependencies": {
     "playwright-core": "^1.56.1",

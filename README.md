@@ -28,6 +28,26 @@ npm run shots        # refresh the home-page screenshots (needs a built dist/)
 npm run sim          # win/lose for all 27 Boost combinations
 ```
 
+### Performance test (concept 3)
+
+```bash
+npm run perf:concept-3                      # all profiles, one run each
+npm run perf:concept-3 -- --profile=mid,low --runs=3 --trace
+```
+
+Builds concept 3, serves it with `vite preview`, and plays one full race (`?auto=PPP`) in Playwright's Chromium for each device profile. The profiles throttle the CPU and network through the DevTools protocol and emulate a phone screen:
+
+| Profile | CPU | Network | Screen |
+|---|---|---|---|
+| `desktop` | 1x | none | 1280×800 @1x |
+| `mid` | 4x slower | fast 4G | 390×844 @3x |
+| `low` | 6x slower | slow 4G | 360×740 @2x |
+| `potato` | 10x slower | slow 3G | 360×640 @2x |
+
+It reports load metrics (TTFB, FCP, LCP, CLS, time until the game is playable, bytes, JS size, heap) and frame pacing for each phase of the race (average FPS, median, p95 and p99 frame times, worst frame, janky frames, frames under 30 fps, long tasks). It also reports main-thread time split into script, layout and style, plus the slowest animation frames and the script behind each one. Results go to `apps/concept-3/perf-results/<time>/report.md` and `report.json`. A profile that misses its budget fails the run with exit code 1. `--trace` saves a Chrome trace per run; open it in the DevTools Performance panel.
+
+Rendering uses the host GPU. `--swiftshader` switches to software rendering, which is slower than any phone and mostly measures the rasteriser. CPU throttling slows only the page's main thread, not the GPU process, so the numbers come from a desktop GPU and are not a real phone measurement. Results vary by about 2x between runs on a busy machine, so use `--runs=3` before you compare.
+
 ## URL flags
 
 | Flag | Effect |

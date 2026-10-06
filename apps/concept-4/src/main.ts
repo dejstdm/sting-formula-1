@@ -130,8 +130,8 @@ async function main() {
     resizeTimer = window.setTimeout(build, 150);
   });
 
+  // Touch goes to the Boost button only (RaceScene). Keys cover a USB arcade button.
   const tap = () => scene?.tap();
-  app.canvas.addEventListener('pointerdown', tap);
   window.addEventListener('keydown', (e) => {
     if (e.code === 'Space' || e.code === 'Enter') {
       e.preventDefault();

@@ -79,7 +79,7 @@ The client's Figma design (file `n5qDtsydLp1HXcWjsFPJfD`), built with PixiJS 8 o
 | `?res=1.5` | Highest render resolution in device pixels (default 2). |
 | `?px=1500000` | Device pixels per frame; resolution drops to fit (default 2,000,000). |
 
-Space, Enter or a tap anywhere on the screen counts as a Boost tap.
+A Boost tap is a touch on the Boost button (an 80 px circle around the can), or Space or Enter.
 
 The performance test works like concept 3's, on port 4177: `npm run perf:concept-4`, or from Windows as above with `apps\concept-4\scripts\perf.mjs --url=http://localhost:4177/concept-4/`. It plays one 15-second lap with `?auto=PPP`. `--variant=res1,res1.5` compares resolution caps.
 

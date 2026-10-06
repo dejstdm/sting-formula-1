@@ -28,15 +28,20 @@ Read from the screens and their captions (sections flow--03 and flow--04):
 - Ring motion (Figma motion data on boost-button): the ring closes from 204 px to the 112 px face (scale 0.549), the glow to 63.6%.
 - Camera: fixed behind MAX. The rival gets larger and lower on screen when he falls behind (screens 11, 13, 14).
 
-## Open questions for Dejan
+## Rules: answered and open
 
-None of these numbers are in Figma. Step 1 uses placeholders, all in `DEMO` in `apps/concept-4/src/race/scene.ts`.
+None of these numbers are in Figma. They all live in `DEMO` in `apps/concept-4/src/race/scene.ts`, so changing one is a one-line edit.
 
-1. **Win and lose.** Screen 06 says "Hit the boost zone every time to cross the line first", but screens 12 to 15 show Boost 2 too early and the player still winning ("the third perfect boost lands"). What decides the result? Does the last Boost decide it (in concepts 1 to 3 a final Perfect wins with at most one earlier miss), the number of Perfects, or the gap at the line?
-2. **Energy.** How fast does it drain, and how much do Too Early and Too Late refill? Figma shows 62% at 0:03, 22% at 0:05 and 70% after an early Boost. Step 1 drains 14% a second and refills 45%.
-3. **A missed Boost** (no tap at all): is it "Too Late", or something else? Step 1 shows Too Late and a grey bolt.
-4. **Timing windows.** Step 1: Perfect within ±120 ms of the ring closing, early before that, late up to 400 ms after, 50 ms latency compensation. The ring takes 1 s to close, as in the Figma motion.
-5. **Tap target.** Step 1 takes a tap anywhere on the screen, which is easier on a phone. Figma shows the can button only.
+Answered by Dejan on 2026-10-06:
+
+- **Energy:** keep the placeholders for now (drains 14% a second; Too Early and Too Late refill 45%).
+- **A missed Boost** (no tap at all) shows Too Late and a grey bolt. Keep.
+- **Timing windows:** keep. Perfect within ±120 ms of the ring closing, early before that, late up to 400 ms after, 50 ms latency compensation. The ring takes 1 s to close, as in the Figma motion.
+- **Tap target:** the Boost button only (Figma shows the can button). The touch area is an 80 px circle around the can, a little larger than the 112 px face. Space and Enter still work, for the arcade button.
+
+Still open:
+
+- **Win and lose.** Figma contradicts itself. Screen 06 says "Hit the boost zone every time to cross the line first", which reads as "miss one and you lose". Screens 12 to 15 show a Too Early on Boost 2 and the player still winning. Step 1 has no result yet, so this only matters for step 2. Options: the last Boost decides (concepts 1 to 3: a final Perfect wins with at most one earlier miss), at least two Perfects win, or whoever is ahead at the line wins.
 
 ## Decisions taken in step 1
 

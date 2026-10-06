@@ -147,6 +147,7 @@ export class RaceScene extends Container {
     this.hudBottom = new HudBottom(W, H - Math.max(0, o.safeBottom - 12), t);
     this.button = new BoostButton(t);
     this.button.position.set(W / 2, H - Math.max(0, o.safeBottom - 12) - 110);
+    this.button.on('pointerdown', () => this.tap());
     this.sparks.position.copyFrom(this.button.position);
     this.banner.position.set(W / 2, this.hudTop.height_ + 80);
 
@@ -185,7 +186,7 @@ export class RaceScene extends Container {
     this.button.setState('default');
   }
 
-  /** A tap on the screen, the button, Space or Enter. */
+  /** A tap on the Boost button, Space or Enter. */
   tap(): void {
     const close = DEMO.ringCloses[this.boost];
     if (close === undefined || this.boostDone) return;

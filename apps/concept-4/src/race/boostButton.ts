@@ -1,4 +1,4 @@
-import { Container, Sprite, type Texture } from 'pixi.js';
+import { Circle, Container, Sprite, type Texture } from 'pixi.js';
 
 export interface BoostButtonTextures {
   face: Texture;
@@ -14,6 +14,8 @@ export type BoostButtonState = 'default' | 'active' | 'perfect' | 'disabled';
 
 /** Figma motion: the timing ring closes from 204 px to the 112 px face; the glow follows to 63.6%. */
 const RING_CLOSED = 0.549;
+/** Touch target radius: the 56 px face plus a margin for thumbs. */
+const HIT_RADIUS = 80;
 const GLOW_CLOSED = 0.636;
 
 function centred(texture: Texture, w: number, h: number, ax = 0.5, ay = 0.5): Sprite {
@@ -58,6 +60,9 @@ export class BoostButton extends Container {
     this.face.addChild(face, inner, can);
     this.addChild(this.activeGlow, this.perfectGlow, this.perfectRing, this.activeRing, this.face);
     this.setState('default');
+    this.eventMode = 'static';
+    this.cursor = 'pointer';
+    this.hitArea = new Circle(0, 0, HIT_RADIUS);
   }
 
   setState(state: BoostButtonState): void {

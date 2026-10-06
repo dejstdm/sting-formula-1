@@ -44,9 +44,10 @@ async function reachable(url) {
 }
 
 function startPreview() {
+  // Run vite's own entry point: killing an npx wrapper would leave the server running.
   const child = spawn(
-    'npx',
-    ['vite', 'preview', '--config', 'vite.preview.config.ts', '--host', '127.0.0.1', '--port', '4173', '--strictPort'],
+    process.execPath,
+    [path.join(root, 'node_modules/vite/bin/vite.js'), 'preview', '--config', 'vite.preview.config.ts', '--host', '127.0.0.1', '--port', '4173', '--strictPort'],
     { cwd: root, stdio: 'inherit' },
   );
   return child;

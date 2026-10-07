@@ -3,6 +3,7 @@
 - Run cycles: gen/<who>-run-sheet.png is a 2x2 sheet on chroma green. Each
   cell is keyed to alpha, despilled, aligned on the head (x) and the feet (y),
   scaled to FRAME_H and packed into one 4x1 strip per runner.
+- The F1 car: gen/f1-car-rear.png keyed and trimmed to a 640 px wide sprite.
 - Figma art (figma/): the track backdrop and the Sting can, re-encoded as WebP.
 
 Usage: python3 pack.py
@@ -75,7 +76,16 @@ def run_strip(who):
     print(f'  frame {fw}x{fh}, feet {round(PAD * scale)}px above the frame bottom')
 
 
+def car():
+    """The Sting F1 car from behind (gen/f1-car-rear.png): keyed, trimmed, 640 px wide."""
+    rgba = key_green(Image.open(GEN / 'f1-car-rear.png'))
+    rgba = rgba.crop(bbox(rgba))
+    scale = 640 / rgba.width
+    save(rgba.resize((640, round(rgba.height * scale)), Image.LANCZOS), 'f1-car-rear', quality=88)
+
+
 def main():
+    car()
     for who in ('player', 'rival'):
         run_strip(who)
     save(Image.open(FIGMA / 'backdrop-track.png').convert('RGB'), 'backdrop-track', quality=84)

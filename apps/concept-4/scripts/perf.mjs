@@ -139,11 +139,18 @@ async function waitFor(url) {
 
 /**
  * Runs in the page before any game code. A separate rAF loop records every frame
- * interval and tags it with the screen on show, so the game itself is untouched.
+ * interval and tags it with the phase on show, so the game itself is untouched.
+ *
+ * It also times each frame's WebGL work on the GPU, when Chrome offers the timer
+ * query extension: one query per frame, from this loop's tick to the next, which
+ * spans exactly one of the game's renders.
  */
 function probe() {
   const p = {
     frames: [],
+    gpuMs: [],
+    gpuTimer: 'unavailable',
+    boosts: [],
     phase: 'loading',
     longTasks: [],
     loafs: [],
@@ -154,10 +161,44 @@ function probe() {
     cls: 0,
   };
   window.__perf = p;
+
+  // Keep the first WebGL context the game creates.
+  let gl = null;
+  const getContext = HTMLCanvasElement.prototype.getContext;
+  HTMLCanvasElement.prototype.getContext = function (type, ...rest) {
+    const ctx = getContext.call(this, type, ...rest);
+    if (!gl && ctx && /webgl/.test(type)) gl = ctx;
+    return ctx;
+  };
+  let timer = null;
+  let open = null;
+  const pending = [];
+  const timeGpu = () => {
+    if (!gl) return;
+    if (timer === null) {
+      timer = (gl instanceof WebGL2RenderingContext && gl.getExtension('EXT_disjoint_timer_query_webgl2')) || false;
+      p.gpuTimer = timer ? 'available' : 'unavailable';
+    }
+    if (!timer) return;
+    if (open) {
+      gl.endQuery(timer.TIME_ELAPSED_EXT);
+      pending.push([open, p.phase]);
+    }
+    open = gl.createQuery();
+    gl.beginQuery(timer.TIME_ELAPSED_EXT, open);
+    // Results arrive a few frames later. A disjoint event (GPU clock change) spoils them.
+    while (pending.length && gl.getQueryParameter(pending[0][0], gl.QUERY_RESULT_AVAILABLE)) {
+      const [q, phase] = pending.shift();
+      if (!gl.getParameter(timer.GPU_DISJOINT_EXT)) p.gpuMs.push([gl.getQueryParameter(q, gl.QUERY_RESULT) / 1e6, phase]);
+      gl.deleteQuery(q);
+    }
+  };
+
   let last = 0;
   const tick = (now) => {
-    if (last) p.frames.push([now - last, p.phase]);
+    if (last) p.frames.push([now - last, p.phase, now]);
     last = now;
+    timeGpu();
     requestAnimationFrame(tick);
   };
   requestAnimationFrame(tick);
@@ -168,7 +209,12 @@ function probe() {
     if (document.body.dataset.phase !== 'race') return 'loading';
     return Number(document.body.dataset.laps ?? 0) >= 1 ? 'result' : 'race';
   };
+  let shownBoost = null;
   const watch = () => {
+    // The game writes data-boost on every Boost result, even a repeat of the same grade.
+    const boost = document.body.dataset.boost;
+    if (boost && boost !== shownBoost) p.boosts.push([performance.now(), boost]);
+    shownBoost = boost;
     const next = phaseOf();
     if (next === p.phase) return;
     if (p.phase === 'loading' && p.readyAt === null) p.readyAt = performance.now();
@@ -179,8 +225,12 @@ function probe() {
   document.addEventListener('DOMContentLoaded', () => {
     new MutationObserver(watch).observe(document.body, {
       attributes: true,
-      attributeFilter: ['data-phase', 'data-laps'],
+      attributeFilter: ['data-phase', 'data-laps', 'data-boost'],
     });
+    // Same grade twice in a row is still a new Boost: watch each write, not each change.
+    new MutationObserver((records) => {
+      for (const r of records) if (r.attributeName === 'data-boost') p.boosts.push([performance.now(), document.body.dataset.boost]);
+    }).observe(document.body, { attributes: true, attributeFilter: ['data-boost'] });
   });
 
   try {

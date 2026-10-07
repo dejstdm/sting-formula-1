@@ -35,9 +35,9 @@ export const concepts = [
     name: 'Concept 4',
     pitch: 'The client’s Figma design, running: red, black and white, seen from behind.',
     how: 'The track, HUD and Boost button come straight from the designer’s Figma file. A shader scrolls the illustrated road in true perspective. The run cycles are generated to match the designer’s runners.',
-    uses: 'PixiJS on WebGL, TypeScript and Vite. Everything that moves each frame is drawn on the GPU, with no page layout in the race. First step: one race scene, no sound yet.',
+    uses: 'PixiJS on WebGL, TypeScript and Vite. Everything that moves each frame is drawn on the GPU, with no page layout in the race. It has the whole flow: registration, start lights, the race, the F1 finish, win and lose, with synthesised sound.',
     size: '0.6 MB',
-    status: 'Work in progress: the race scene only, waiting for a test on real phones.',
+    status: 'Playable end to end. Waiting for tests on real phones.',
     shot: 'shots/concept-4.webp',
   },
 ];

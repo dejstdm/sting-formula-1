@@ -1,5 +1,5 @@
 import { Container, Geometry, GlProgram, Graphics, Mesh, RendererType, Shader, Sprite, Texture, type Renderer, type Text } from 'pixi.js';
-import { molot, RED } from './hud';
+import { DARK_RED, molot, RED } from './hud';
 
 const vertex = /* glsl */ `
 in vec2 aPosition;
@@ -142,7 +142,7 @@ export class Sparks extends Container {
   }
 }
 
-export type Feedback = 'perfect' | 'early' | 'late';
+export type Feedback = 'perfect' | 'good' | 'early' | 'late' | 'finish';
 
 /**
  * The feedback component: a slanted title box (red for Perfect, white for early or late)
@@ -150,7 +150,7 @@ export type Feedback = 'perfect' | 'early' | 'late';
  * made up front, so showing one never rasterises text during the effect.
  */
 export class Banner extends Container {
-  private bg: Record<'red' | 'white', Graphics>;
+  private bg: Record<'red' | 'dark' | 'white', Graphics>;
   private titles = new Map<string, Text>();
   private subs = new Map<string, Text>();
   private t = -1;
@@ -162,12 +162,12 @@ export class Banner extends Container {
       g.x = -175.1;
       return g;
     };
-    this.bg = { red: box(RED), white: box(0xffffff) };
+    this.bg = { red: box(RED), dark: box(DARK_RED), white: box(0xffffff) };
     const subBg = new Graphics().poly([8, 0, 238, 0, 230, 22, 0, 22]).fill(0x000000);
     subBg.position.set(-119, 76);
-    this.addChild(this.bg.red, this.bg.white, subBg);
-    for (const [kind, text] of [['perfect', 'PERFECT'], ['early', 'TOO EARLY'], ['late', 'TOO LATE']] as const) {
-      const title = molot(text, 56, { fill: kind === 'perfect' ? 0xffffff : 0x000000 });
+    this.addChild(this.bg.red, this.bg.dark, this.bg.white, subBg);
+    for (const [kind, text] of [['perfect', 'PERFECT'], ['good', 'GOOD'], ['early', 'TOO EARLY'], ['late', 'TOO LATE'], ['finish', 'FINISH']] as const) {
+      const title = molot(text, 56, { fill: kind === 'early' || kind === 'late' ? 0x000000 : 0xffffff });
       title.anchor.set(0.5, 0.5);
       title.y = 42;
       this.titles.set(kind, title);
@@ -191,8 +191,9 @@ export class Banner extends Container {
   }
 
   show(kind: Feedback, subtitle: string): void {
-    this.bg.red.visible = kind === 'perfect';
-    this.bg.white.visible = kind !== 'perfect';
+    this.bg.red.visible = kind === 'perfect' || kind === 'finish';
+    this.bg.dark.visible = kind === 'good';
+    this.bg.white.visible = kind === 'early' || kind === 'late';
     for (const [k, title] of this.titles) title.visible = k === kind;
     for (const [k, sub] of this.subs) sub.visible = k === subtitle;
     this.t = 0;

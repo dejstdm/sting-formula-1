@@ -1,8 +1,15 @@
 import './style.css';
 import { Application, Assets, Container, type Texture } from 'pixi.js';
-import { RaceScene, type SceneTextures } from './race/scene';
+import { GameAudio } from './audio';
+import { deviceConsole, reportLine } from './debug/console';
+import { Telemetry } from './debug/telemetry';
+import { RaceScene, type RaceResult, type SceneOptions, type SceneTextures } from './race/scene';
+import { Screens } from './ui/screens';
 
 const params = new URLSearchParams(location.search);
+const DEBUG = params.has('debug');
+/** ?auto alone (perf tests, screenshots) loops one race with no screens. With ?debug the device test handles auto play. */
+const LEGACY_LOOP = params.has('auto') && !DEBUG;
 const DESIGN_W = 375;
 const DESIGN_H = 812;
 /** Device pixels per frame we are willing to render; resolution drops to fit. */
@@ -48,6 +55,7 @@ function resolutionFor(vw: number, vh: number): number {
 async function loadTextures(): Promise<SceneTextures> {
   const svg = (file: string, resolution = 3) => ({ src: url(`sprites/${file}`), data: { resolution } });
   const load = (src: string | { src: string; data: { resolution: number } }) => Assets.load<Texture>(src);
+  const car = await Assets.load<Texture>(url('sprites/f1-car-rear.webp')).catch(() => undefined);
   const [backdrop, playerRun, rivalRun, can, face, innerRing, activeGlow, activeRing, perfectGlow, perfectRing, flash, empty, perfect, missed] =
     await Promise.all([
       load(url('sprites/backdrop-track.webp')),
@@ -66,6 +74,7 @@ async function loadTextures(): Promise<SceneTextures> {
       load(svg('bolt-missed.svg')),
     ]);
   return {
+    car,
     backdrop,
     playerRun,
     rivalRun,
@@ -95,32 +104,59 @@ async function main() {
     powerPreference: 'high-performance',
   });
   host.appendChild(app.canvas);
+  // The name PixiJS DevTools look for. The perf test reads texture memory through it.
+  (globalThis as { __PIXI_APP__?: Application }).__PIXI_APP__ = app;
 
   const [textures] = await Promise.all([loadTextures(), document.fonts.load('22px Molot')]);
+
+  const audio = new GameAudio();
+  const screens = new Screens(document.body, audio);
+  const telemetry = DEBUG ? new Telemetry(app, params) : null;
 
   const root = new Container();
   app.stage.addChild(root);
   let scene: RaceScene | null = null;
+  let racing = false;
+  let finishRace: ((r: RaceResult) => void) | null = null;
+  let testMode: 'auto' | 'manual' = 'manual';
+
+  const opts: SceneOptions = {
+    width: DESIGN_W,
+    height: DESIGN_H,
+    safeTop: 0,
+    safeBottom: 0,
+    playerName: 'MAX',
+    auto: LEGACY_LOOP ? params.get('auto') || 'PPP' : null,
+    loop: LEGACY_LOOP,
+    audio,
+    onLap: (laps) => (document.body.dataset.laps = String(laps)),
+    onBoost: (grade, index) => {
+      document.body.dataset.boost = grade;
+      telemetry?.boost(index, grade);
+    },
+    onFinish: (r) => finishRace?.(r),
+  };
 
   const build = () => {
     const l = layout();
     app.renderer.resolution = resolutionFor(l.vw, l.vh);
     app.renderer.resize(l.vw, l.vh);
+    root.scale.set(l.scale);
+    root.position.set(l.x, l.y);
+    // Never rebuild in the middle of a race: it would restart it. Just refit the picture.
+    if (racing && scene) return;
     scene?.destroy({ children: true });
-    scene = new RaceScene(app.renderer, textures, {
+    Object.assign(opts, {
       width: l.width,
       height: l.height,
       safeTop: l.safeTop,
       safeBottom: l.safeBottom,
-      playerName: (params.get('name') || 'MAX').slice(0, 10),
-      auto: params.has('auto') ? params.get('auto') || 'PPP' : null,
-      onLap: (laps) => (document.body.dataset.laps = String(laps)),
-      onBoost: (grade) => (document.body.dataset.boost = grade),
+      playerName: (params.get('name') || screens.name).slice(0, 10),
     });
-    root.scale.set(l.scale);
-    root.position.set(l.x, l.y);
+    scene = new RaceScene(app.renderer, textures, opts);
     root.addChild(scene);
     scene.warmUp(app.renderer);
+    screens.place({ x: l.x, y: l.y, scale: l.scale, width: l.width, height: l.height, safeTop: l.safeTop, safeBottom: l.safeBottom }, scene.topInset);
   };
   build();
 
@@ -134,17 +170,71 @@ async function main() {
   const tap = () => scene?.tap();
   window.addEventListener('keydown', (e) => {
     if (e.code === 'Space' || e.code === 'Enter') {
+      if ((e.target as HTMLElement | null)?.tagName === 'INPUT' || (e.target as HTMLElement | null)?.tagName === 'BUTTON') return;
       e.preventDefault();
       if (!e.repeat) tap();
     }
   });
+  // Browsers only start audio after a tap, so unlock on the first one, wherever it lands.
+  const unlock = () => audio.unlock();
+  window.addEventListener('pointerdown', unlock, { once: true });
+  window.addEventListener('touchend', unlock, { once: true });
 
   // Game time: real seconds, clamped so a stall doesn't teleport the runners.
   app.ticker.add((ticker) => scene?.update(Math.min(ticker.deltaMS / 1000, 0.1)));
 
-  if (params.has('debug')) startDebug(app);
+  if (DEBUG) startDebug(app);
   // Flag the race once its first frames are on screen, not while setup is still running.
   requestAnimationFrame(() => requestAnimationFrame(() => (document.body.dataset.phase = 'race')));
+
+  if (LEGACY_LOOP) return;
+
+  /** One race, from the grid to the result. */
+  const playRace = async (auto: string | null, withLights: boolean): Promise<RaceResult> => {
+    scene!.rearm();
+    opts.auto = auto;
+    if (withLights) await screens.lights();
+    else await new Promise((r) => setTimeout(r, 900));
+    racing = true;
+    const finished = new Promise<RaceResult>((resolve) => (finishRace = resolve));
+    scene!.start();
+    audio.startMusic();
+    telemetry?.begin(testMode);
+    const result = await finished;
+    racing = false;
+    audio.stopMusic();
+    telemetry?.end(result.grades, auto && testMode === 'auto' ? null : result.won);
+    return result;
+  };
+
+  for (;;) {
+    if (telemetry) {
+      testMode = await deviceConsole(screens, telemetry);
+      screens.clear();
+      if (testMode === 'auto') {
+        for (let i = 0; i < 3; i++) await playRace('PPP', false);
+        continue; // back to the console to see and send the results
+      }
+    }
+    if (!params.has('skip')) {
+      await screens.register();
+      build(); // picks up the first name
+      await screens.charging();
+      await screens.howToPlay();
+      await screens.rival();
+    }
+    for (;;) {
+      screens.clear();
+      const result = await playRace(params.get('play'), true);
+      const extra = telemetry ? reportLine(telemetry, telemetry.history[0] ?? null) : '';
+      let next = await screens.result(result, extra);
+      if (next === 'prize') {
+        await screens.prize();
+        next = 'again';
+      }
+      scene!.rearm();
+    }
+  }
 }
 
 function startDebug(app: Application) {

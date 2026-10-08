@@ -14,6 +14,7 @@ import { RULES, type Grade } from '../race/rules';
 export const REPORT_VERSION = 2;
 const QUEUE_KEY = 'stingboost.c4.perfQueue';
 const LABEL_KEY = 'stingboost.c4.deviceLabel';
+const AUTO_LABEL_KEY = 'stingboost.c4.deviceLabelAutomatic';
 const HISTORY_KEY = 'stingboost.c4.perfHistory';
 
 export interface RaceReport {
@@ -73,6 +74,7 @@ export interface SendStatus {
   pending: number;
   sent: number;
   lastError: string;
+  sending: boolean;
 }
 
 const percentile = (sorted: number[], p: number): number => sorted[Math.min(sorted.length - 1, Math.floor(p * sorted.length))] ?? 0;
@@ -97,6 +99,7 @@ function writeJson(key: string, value: unknown): void {
 export class Telemetry {
   readonly session = uid();
   label: string;
+  labelAutomatic: boolean;
   readonly target: string;
   readonly status: SendStatus;
   history: RaceReport[] = readJson<RaceReport[]>(HISTORY_KEY, []);
@@ -118,13 +121,14 @@ export class Telemetry {
   private boosts: { index: number; grade: Grade; at: number; frameAt: number }[] = [];
   private longTasks = { count: 0, totalMs: 0, worstMs: 0 };
   private deviceInfo: Record<string, unknown> = {};
-  private flushing = false;
+  private flushPromise: Promise<void> | null = null;
 
   constructor(app: Application, params: URLSearchParams) {
     this.app = app;
     this.label = localStorage.getItem(LABEL_KEY) ?? '';
+    this.labelAutomatic = !this.label || localStorage.getItem(AUTO_LABEL_KEY) === 'true' || /^K, Android 10(?:\.0)?$/.test(this.label);
     this.target = params.get('perf') || (import.meta.env.VITE_PERF_URL as string | undefined) || '';
-    this.status = { configured: !!this.target, target: this.target ? new URL(this.target).host : '', pending: this.queue().length, sent: 0, lastError: '' };
+    this.status = { configured: !!this.target, target: this.target ? new URL(this.target).host : '', pending: this.queue().length, sent: 0, lastError: '', sending: false };
 
     app.ticker.add((t) => {
       if (!this.recording) return;
@@ -157,10 +161,12 @@ export class Telemetry {
     });
   }
 
-  setLabel(label: string): void {
+  setLabel(label: string, automatic = false): void {
     this.label = label.trim().slice(0, 60);
+    this.labelAutomatic = automatic;
     try {
       localStorage.setItem(LABEL_KEY, this.label);
+      localStorage.setItem(AUTO_LABEL_KEY, String(automatic));
     } catch {
       /* ignore */
     }
@@ -358,6 +364,7 @@ export class Telemetry {
     } catch {
       /* not offered */
     }
+    this.onChange?.(); // model and OS are ready before the refresh-rate measurement finishes
     // Screen refresh rate: time 30 animation frames while idle.
     info.refreshHz = await new Promise<number>((resolve) => {
       let n = 0;
@@ -381,28 +388,43 @@ export class Telemetry {
   }
 
   /** Send everything waiting. Failed reports stay queued for next time. */
-  async flush(): Promise<void> {
-    if (!this.target || this.flushing) return;
-    this.flushing = true;
+  flush(): Promise<void> {
+    if (!this.target) return Promise.resolve();
+    if (this.flushPromise) return this.flushPromise;
+    this.flushPromise = this.sendQueued().finally(() => { this.flushPromise = null; });
+    return this.flushPromise;
+  }
+
+  private async sendQueued(): Promise<void> {
+    this.status.sending = true;
+    this.status.lastError = '';
+    this.onChange?.();
     try {
-      let q = this.queue();
-      for (const report of [...q]) {
+      while (this.queue().length) {
+        const report = this.queue()[0];
+        const controller = new AbortController();
+        const timeout = window.setTimeout(() => controller.abort(), 15_000);
         try {
           // text/plain keeps this a "simple" cross-origin request: no preflight, works on every phone.
-          const res = await fetch(this.target, { method: 'POST', headers: { 'Content-Type': 'text/plain' }, body: JSON.stringify(report), keepalive: false });
+          const res = await fetch(this.target, { method: 'POST', headers: { 'Content-Type': 'text/plain' }, body: JSON.stringify(report), keepalive: false, signal: controller.signal });
           if (!res.ok) throw new Error(`HTTP ${res.status}`);
-          q = q.filter((r) => r.id !== report.id);
-          writeJson(QUEUE_KEY, q);
+          // Re-read so a race queued while fetch was pending is never discarded.
+          writeJson(QUEUE_KEY, this.queue().filter((r) => r.id !== report.id));
+          if (this.queue().some((r) => r.id === report.id)) throw new Error('Could not update saved results on this device');
+          this.status.pending = this.queue().length;
           this.status.sent++;
           this.status.lastError = '';
+          this.onChange?.();
         } catch (e) {
-          this.status.lastError = e instanceof Error ? e.message : String(e);
+          this.status.lastError = controller.signal.aborted ? 'Request timed out' : e instanceof Error ? e.message : String(e);
           break;
+        } finally {
+          clearTimeout(timeout);
         }
       }
       this.status.pending = this.queue().length;
     } finally {
-      this.flushing = false;
+      this.status.sending = false;
       this.onChange?.();
     }
   }

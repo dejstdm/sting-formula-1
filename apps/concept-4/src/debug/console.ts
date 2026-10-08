@@ -4,14 +4,22 @@ import type { RaceReport, Telemetry } from './telemetry';
 const esc = (s: unknown) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]!);
 
 /** A guess at the phone from the user agent, to save typing. iPhones never say which model. */
-function guessLabel(model = ''): string {
-  if (model) return `${model}, ${navigator.userAgent.match(/Android ([\d.]+)/)?.[0] ?? navigator.platform}`;
-  const ua = navigator.userAgent;
+export function guessLabel(device: Record<string, unknown>): string {
+  const ua = String(device.userAgent ?? navigator.userAgent);
+  const model = String(device.model ?? '').trim();
+  const platform = String(device.platform ?? '');
+  const version = String(device.osVersion ?? '').trim();
+  if (model) return `${model}, ${platform || 'Android'}${version ? ` ${version}` : ''}`;
+  const size = (device.screen as number[] | undefined)?.join('×');
   const ios = /iPhone OS ([\d_]+)/.exec(ua);
-  if (ios) return `iPhone, iOS ${ios[1].replace(/_/g, '.')}`;
+  if (ios) return `iPhone, iOS ${ios[1].replace(/_/g, '.')}${size ? `, ${size}` : ''}`;
   const android = /Android ([\d.]+); ([^)]+)\)/.exec(ua);
-  if (android) return `${android[2].replace(/ Build.*/, '')}, Android ${android[1]}`;
-  return '';
+  if (android || platform === 'Android') {
+    const fromUa = android?.[2].replace(/ Build.*/, '').trim();
+    const name = fromUa && fromUa !== 'K' ? fromUa : 'Android device';
+    return `${name}, Android ${version || android?.[1] || '?'}${name === 'Android device' && size ? `, ${size}` : ''}`;
+  }
+  return platform ? `${platform} device${size ? `, ${size}` : ''}` : '';
 }
 
 function line(r: RaceReport): string {
@@ -29,6 +37,7 @@ function line(r: RaceReport): string {
  * the tester picks one.
  */
 export async function deviceConsole(screens: Screens, telemetry: Telemetry): Promise<'auto' | 'manual' | 'stress'> {
+  let automaticLabel = telemetry.labelAutomatic;
   const info = (): string => {
     const d = telemetry.device as Record<string, unknown>;
     const s = telemetry.status;
@@ -45,7 +54,7 @@ queued ${s.pending} · sent ${s.sent}${s.lastError ? ` · error: ${esc(s.lastErr
     const recent = telemetry.history.slice(0, 5).map((r) => esc(line(r))).join('\n') || 'no results yet';
     return `
       <h2>DEVICE TEST</h2>
-      <label>PHONE NAME (model and OS)<input id="dev-label" maxlength="60" autocomplete="off" placeholder="e.g. iPhone 8, iOS 15.8" value="${esc(telemetry.label || guessLabel(String((telemetry.device as Record<string, unknown>).model ?? '')))}" /></label>
+      <label>PHONE NAME (model and OS)<input id="dev-label" maxlength="60" autocomplete="off" placeholder="e.g. iPhone 8, iOS 15.8" value="${esc(automaticLabel ? guessLabel(telemetry.device) : telemetry.label)}" /></label>
       <pre id="dev-info">${info()}</pre>
       <div class="row">
         <button class="cta" data-start="auto"><span>AUTO TEST ×3</span></button>
@@ -55,7 +64,7 @@ queued ${s.pending} · sent ${s.sent}${s.lastError ? ` · error: ${esc(s.lastErr
       <label class="check"><input type="checkbox" id="dev-saver" aria-describedby="dev-saver-help" /> Battery saver / low power mode is ON</label>
       <p id="dev-saver-help" class="fine">This checkbox only records the phone's current setting. To turn Battery Saver / Low Power Mode on or off, use your phone's settings. First run AUTO TEST with the mode OFF and this box unchecked. Then turn the mode ON in your phone's settings, check this box, and run AUTO TEST again.</p>
       <p id="dev-warn" class="warn" hidden></p>
-      <p class="fine">Auto test: keep the screen on, do not touch it. 3 races of about 17 seconds, including the win finish. Stress: 10 races in a row (about 3 minutes) to show whether the phone slows down when it gets hot. Come back here after testing to send the results.</p>
+      <p class="fine">Auto test: keep the screen on, do not touch it. 3 races of about 17 seconds, including the win finish. Stress: 10 races in a row (about 3 minutes) to show whether the phone slows down when it gets hot. Results send automatically. If sending fails, press SEND to retry.</p>
       <pre>${recent}</pre>
       <div class="row">
         <button class="cta ghost" data-act="copy"><span>COPY</span></button>
@@ -66,18 +75,34 @@ queued ${s.pending} · sent ${s.sent}${s.lastError ? ` · error: ${esc(s.lastErr
 
   const { done, el } = screens.custom('screen console', render());
   const label = el.querySelector<HTMLInputElement>('#dev-label')!;
-  const saveLabel = () => telemetry.setLabel(label.value);
-  label.addEventListener('input', saveLabel);
+  const saveLabel = () => telemetry.setLabel(label.value, automaticLabel);
+  label.addEventListener('input', () => { automaticLabel = false; saveLabel(); });
   saveLabel();
   const out = el.querySelector<HTMLElement>('#dev-out')!;
   const infoEl = el.querySelector<HTMLElement>('#dev-info')!;
-  telemetry.onChange = () => (infoEl.innerHTML = info());
-  el.querySelector('[data-act="send"]')!.addEventListener('click', async () => {
+  const send = el.querySelector<HTMLButtonElement>('[data-act="send"]')!;
+  const update = () => {
+    if (automaticLabel) {
+      label.value = guessLabel(telemetry.device).slice(0, 60);
+      saveLabel();
+    }
+    infoEl.innerHTML = info();
+    const s = telemetry.status;
+    send.hidden = s.pending === 0 || s.sending;
+    send.disabled = !s.configured || s.sending;
+    send.querySelector('span')!.textContent = `SEND (${s.pending})`;
+    if (s.sending || s.pending || telemetry.history.length) {
+      out.hidden = false;
+      out.textContent = sendMessage(telemetry);
+    }
+  };
+  telemetry.onChange = update;
+  update();
+  send.addEventListener('click', async () => {
     out.hidden = false;
     out.textContent = 'sending…';
     await telemetry.flush();
-    const s = telemetry.status;
-    out.textContent = !s.configured ? 'No collector is set, so nothing can be sent. Use COPY.' : s.pending ? `Not sent: ${s.lastError || 'unknown error'}` : `Sent. ${s.sent} reports delivered.`;
+    update();
   });
   el.querySelector('[data-act="copy"]')!.addEventListener('click', async () => {
     const text = telemetry.exportText();
@@ -112,7 +137,13 @@ queued ${s.pending} · sent ${s.sent}${s.lastError ? ` · error: ${esc(s.lastErr
   const go = await Promise.race([done, start]);
   updateConditions();
   saveLabel();
+  if (telemetry.onChange === update) telemetry.onChange = null;
   return go as 'auto' | 'manual' | 'stress';
+}
+
+function sendMessage(telemetry: Telemetry): string {
+  const s = telemetry.status;
+  return !s.configured ? 'No collector is set. Results are saved on this device. Use COPY.' : s.sending ? 'Sending results…' : s.pending === 0 ? 'All results sent.' : s.lastError ? `Not sent: ${s.lastError}. Press SEND to retry.` : `${s.pending} results waiting to send. Press SEND.`;
 }
 
 /** One line for the result screens in debug mode. */
@@ -131,21 +162,18 @@ export function resultSendControls(el: HTMLElement, telemetry: Telemetry): () =>
   const send = box.querySelector<HTMLButtonElement>('[data-send-results]')!;
   const label = send.querySelector('span')!;
   const status = box.querySelector<HTMLElement>('[data-send-status]')!;
-  let sending = false;
   const update = () => {
     const s = telemetry.status;
     report.innerHTML = reportLine(telemetry, telemetry.history[0] ?? null);
-    label.textContent = sending ? 'SENDING…' : `SEND (${s.pending})`;
-    send.disabled = sending || !s.configured || s.pending === 0;
-    status.textContent = !s.configured ? 'No collector is set. Results are saved on this device.' : s.pending === 0 ? 'All results sent.' : s.lastError ? `Not sent: ${s.lastError}. Press SEND to retry.` : `${s.pending} results waiting to send.`;
+    label.textContent = `SEND (${s.pending})`;
+    send.hidden = s.pending === 0 || s.sending;
+    send.disabled = s.sending || !s.configured;
+    status.textContent = sendMessage(telemetry);
   };
   send.addEventListener('click', async () => {
-    sending = true;
-    update();
     try {
       await telemetry.flush();
     } finally {
-      sending = false;
       update();
     }
   });

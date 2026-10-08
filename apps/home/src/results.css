@@ -27,8 +27,20 @@ tbody tr:hover { background: #ffffff06; }
 .pass { color: #adf3b8; background: #173522; }
 .fail { color: #ffc0b8; background: #491d1d; }
 .neutral { color: #ddd; background: #333; }
+.details-toggle { display: block; margin-top: 8px; padding: 0; border: 0; background: none; color: var(--red); cursor: pointer; font: 15px var(--body); }
+.details-toggle::before { content: '▸ '; }
+.details-toggle[aria-expanded="true"]::before { content: '▾ '; }
+.device-details-row { background: #ffffff04; }
+.device-details { padding: 8px; font-size: 16px; font-weight: 600; white-space: normal; width: min(1100px, calc(100vw - 80px)); }
+.device-details h3 { margin: 0 0 18px; font: 22px var(--display); }
+.device-details dl { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 18px 24px; margin: 14px 0; }
+.device-details dt { color: var(--mute); font-size: 12px; text-transform: uppercase; }
+.device-details dd { margin: 2px 0 0; overflow-wrap: anywhere; }
+.device-details p { color: var(--mute); font-size: 13px; }
+tbody td { vertical-align: top; }
 a:focus-visible, button:focus-visible, select:focus-visible, .table-wrap:focus-visible { outline: 2px solid white; outline-offset: 4px; }
 @media (max-width: 640px) {
+  .device-details dl { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
   .results-page { width: calc(100% - 32px); margin-top: 28px; }
   .totals { grid-template-columns: repeat(2, 1fr); }
   .results-toolbar { gap: 16px; }

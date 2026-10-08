@@ -60,9 +60,9 @@ Not done yet: ElevenLabs or recorded sound, and a voice. The synthesised sounds 
 
 Once on `main`, open the live link with `?debug`: https://sting-formula-1.vercel.app/concept-4/?debug
 
-1. Type the phone's name and OS (an iPhone never says which model it is).
+1. Check the suggested phone name and OS. Android uses the detected model and OS when available. Edit the name if needed, especially for an iPhone, which does not reveal its exact model. Names you edit are kept.
 2. Press **AUTO TEST ×3**. The game plays three races with three Perfect Boosts, with no screens in between, so every phone does the same work. Do not touch the screen.
-3. Back on the console, press **SEND**. **COPY** puts all results on the clipboard if sending is not set up.
+3. Results send automatically after each race. The console and manual race result screen show **All results sent** after delivery. **SEND** appears only for queued results after sending stops; press it to retry a failed or timed-out request. **COPY** puts all results on the clipboard if sending is not set up. The linked results page includes expandable **Device details**, including measurements already captured by earlier tests.
 
 Each race produces one report: the device (GPU, cores, memory, screen, pixel ratio, refresh rate, browser, network), the page load, the render resolution, and the race (average fps, p50, p95, p99, worst frame, share of frames over 25, 34 and 50 ms, fps for each second, long tasks, the worst frame after each Boost, JS heap where the browser offers it). There is no personal data in it. Reports are kept on the phone and sent when a connection exists.
 

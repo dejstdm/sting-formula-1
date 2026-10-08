@@ -10,10 +10,20 @@ export async function loadDeviceResults(env) {
   if (!response.ok) throw new Error('The results collector is unavailable.');
   const reports = await response.json();
   if (!Array.isArray(reports)) throw new Error('The results collector returned an invalid response.');
-  // Publish performance measurements, without raw device fingerprints, notes or request URLs.
+  // Publish selected device and performance fields, without raw user agents, notes or request URLs.
   return reports.map((r) => ({
     id: r.id, at: r.at, label: r.label, build: r.build, mode: r.mode,
     interrupted: Boolean(r.interrupted), batterySaver: Boolean(r.conditions?.batterySaver),
+    device: {
+      model: r.device?.model, platform: r.device?.platform, osVersion: r.device?.osVersion,
+      browser: r.device?.browser, cores: r.device?.cores, memoryGB: r.device?.memoryGB,
+      gpuRenderer: r.device?.gpuRenderer, gpuVendor: r.device?.gpuVendor, webgl: r.device?.webgl,
+      screen: r.device?.screen, viewport: r.device?.viewport, dpr: r.device?.dpr,
+      refreshHz: r.device?.refreshHz, network: r.device?.network,
+    },
+    render: { resolution: r.render?.resolution, mpx: r.render?.mpx },
+    load: { ttfbMs: r.load?.ttfbMs, loadedMs: r.load?.loadedMs, transferKB: r.load?.transferKB },
+    battery: r.battery ? { start: r.battery.start, end: r.battery.end, charging: r.battery.charging } : null,
     race: {
       avgFps: r.race?.avgFps, p95: r.race?.p95, worst: r.race?.worst,
       over34Pct: r.race?.over34Pct,

@@ -23,8 +23,7 @@
 export type Grade = 'perfect' | 'good' | 'early' | 'late' | 'miss';
 
 export const RULES = {
-  raceSeconds: 15,
-  /** The winner crosses the line here; the F1 car sequence runs from here to the end. */
+  /** The winner crosses the line here; the finish sequence (race/finish.ts) runs from here. */
   finishAt: 13.0,
   /** When each timing ring closes on the button. */
   ringCloses: [5.9, 8.9, 11.9],

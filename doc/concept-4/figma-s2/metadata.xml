@@ -1,0 +1,20 @@
+<frame id="21:195" name="screen--04-sting-charged" x="512" y="89" width="375" height="812" />
+<!-- children (from get_metadata on 97:2309 / 80:16401 / 97:2310) -->
+<frame id="97:2309" name="screen__content" x="0" y="0" width="375" height="710">
+  <frame id="80:16402" name="screen__title" x="0" y="450" width="375" height="110.88">
+    <text id="21:229" name="screen__headline" x="10.09" y="0" width="395.18" height="55.44" />
+    <text id="21:230" name="screen__headline--accent" x="10.09" y="55.44" width="395.18" height="55.44" />
+  </frame>
+  <frame id="80:16401" name="screen__energy" x="0" y="592.88" width="375" height="53.99">
+    <frame id="80:16400" name="screen__energy-bar" x="39.35" y="0" width="296.3" height="18.99">
+      <vector id="21:231" name="screen__energy-track" x="0" y="1" width="296.3" height="18" />
+      <vector id="21:232" name="screen__energy-fill" x="0" y="0" width="296.3" height="18.99" />
+    </frame>
+    <text id="21:233" name="screen__energy-label--100" x="0" y="34.99" width="375" height="19" />
+    <text id="88:1981" name="screen__energy-label--0" x="0" y="34.99" width="327" height="19" />
+    <!-- ...--10 (88:1985) --20 (88:1990) --30 (88:1995) --40 (88:2000) --50 (88:2005) --60 (88:2010) --70 (88:2015) --80 (88:2020) --90 (88:2025): same x/y/w/h -->
+  </frame>
+</frame>
+<frame id="97:2310" name="screen__actions" x="0" y="710" width="375" height="102">
+  <instance id="80:16390" name="button--primary" x="24" y="0" width="327" height="54" />
+</frame>

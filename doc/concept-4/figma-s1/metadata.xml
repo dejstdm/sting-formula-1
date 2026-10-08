@@ -1,0 +1,485 @@
+Currently selected nodes:
+- 21:195: screen--04-sting-charged
+
+
+
+<canvas id="19:2" name="◉  LAYOUTS · VARIANT A" x="0" y="0" width="0" height="0">
+  <section id="20:2" name="board--components" x="0" y="-3013" width="3660" height="2773">
+    <symbol id="20:140" name="runner/f1-car" x="2291" y="321" width="375" height="420" />
+    <symbol id="80:16541" name="hud--top" x="1813" y="1486" width="375" height="108.4320068359375" />
+    <frame id="80:16755" name="feedback" x="60" y="1937" width="402" height="377.94403076171875">
+      <symbol id="80:16754" name="state=perfect" x="21" y="21" width="360" height="98.64801025390625" />
+      <symbol id="80:16756" name="state=early" x="21" y="139.64801025390625" width="360" height="98.64801025390625" />
+      <symbol id="80:16763" name="state=late" x="21" y="258.2960205078125" width="360" height="98.64801025390625" />
+    </frame>
+    <frame id="90:2953" name="icon-bolt" x="60" y="1506" width="56.54545593261719" height="158">
+      <symbol id="90:2952" name="state=empty" x="20" y="20" width="16.545454025268555" height="26" />
+      <symbol id="90:2956" name="state=missed" x="20" y="112" width="16.545454025268555" height="26" />
+      <symbol id="90:2954" name="state=perfect" x="20" y="66" width="16.545454025268555" height="26" />
+    </frame>
+    <frame id="90:3047" name="boost-button" x="207" y="1506" width="1042" height="262" />
+    <frame id="94:2107" name="backdrop" x="60" y="269" width="1335" height="812">
+      <symbol id="20:3" name="type=track" x="20" y="20" width="375" height="812" />
+      <symbol id="20:112" name="type=ui" x="415" y="20" width="375" height="812" />
+    </frame>
+    <frame id="94:2108" name="runner" x="2267" y="801" width="470" height="280">
+      <symbol id="20:84" name="character=max" x="20" y="20" width="210" height="280" />
+      <symbol id="20:98" name="character=rival" x="250" y="20" width="210" height="280" />
+    </frame>
+    <frame id="94:2109" name="f1-scene" x="953" y="269" width="1209" height="852">
+      <symbol id="30:971" name="scene=drop-in" x="20" y="20" width="375" height="812" />
+      <symbol id="30:1113" name="scene=head-on" x="417" y="20" width="375" height="812" />
+      <symbol id="30:1199" name="scene=victory" x="814" y="20" width="375" height="812" />
+    </frame>
+    <frame id="94:2376" name="button" x="84" y="1172" width="327" height="148">
+      <symbol id="80:16383" name="variant=primary" x="0" y="0" width="327" height="54" />
+      <symbol id="80:16483" name="variant=secondary" x="0" y="94" width="327" height="54" />
+    </frame>
+    <symbol id="95:2107" name="brand-tag" x="903" y="1162" width="146.1824188232422" height="19.733545303344727" />
+    <frame id="95:2450" name="pagination" x="903" y="1252" width="52.20000076293945" height="32">
+      <symbol id="95:2442" name="step=1" x="0" y="0" width="52.20000076293945" height="6" />
+      <symbol id="95:2446" name="step=2" x="0" y="26" width="52.20000076293945" height="6" />
+    </frame>
+    <frame id="95:2502" name="start-lights" x="568" y="1937" width="319" height="436">
+      <symbol id="95:2451" name="lit=5" x="0" y="0" width="319" height="132" />
+      <symbol id="95:2468" name="lit=3" x="0" y="152" width="319" height="132" />
+      <symbol id="95:2485" name="lit=0" x="0" y="304" width="319" height="132" />
+    </frame>
+    <frame id="95:2583" name="form-field" x="500" y="1172" width="327" height="191.70831298828125">
+      <symbol id="95:2569" name="state=focused" x="0" y="0" width="327" height="75.85415649414062" />
+      <symbol id="95:2574" name="state=default" x="0" y="115.85415649414062" width="327" height="75.85415649414062" />
+    </frame>
+    <frame id="95:2595" name="boost-result" x="2267" y="1486" width="240" height="96">
+      <symbol id="95:2584" name="state=perfect" x="0" y="0" width="240" height="38" />
+      <symbol id="95:2588" name="state=missed" x="0" y="58" width="240" height="38" />
+    </frame>
+    <frame id="95:2630" name="kerb" x="2743" y="323" width="336" height="16">
+      <symbol id="95:2608" name="size=lg" x="0" y="0" width="336" height="16" />
+    </frame>
+    <symbol id="95:2109" name="caption" x="60" y="63" width="375" height="74" />
+    <frame id="90:3763" name="hud--bottom" x="1319" y="1486" width="415" height="262">
+      <symbol id="90:2931" name="Property 1=Default" x="21" y="21" width="373" height="220" />
+    </frame>
+    <frame id="133:1800" name="sting-can" x="60" y="2453" width="258" height="260">
+      <symbol id="20:139" name="style=photo" x="20" y="20" width="99" height="220" />
+      <symbol id="113:10239" name="style=illustrated" x="149" y="20" width="99" height="220" />
+    </frame>
+  </section>
+  <frame id="95:2568" name="chat-bubble" x="86" y="-4117" width="327" height="92">
+    <symbol id="95:2557" name="author=bot" x="0" y="0" width="327" height="80" />
+    <symbol id="95:2561" name="author=user" x="347" y="0" width="327" height="40" />
+  </frame>
+  <section id="21:2" name="flow--01-entry-journey" x="0" y="0" width="981" height="1060">
+    <frame id="21:131" name="screen--03-registration" x="104" y="89" width="375" height="812">
+      <instance id="21:132" name="backdrop--ui" x="0" y="0" width="375" height="812" />
+      <frame id="80:16372" name="screen__content" x="0" y="0" width="375" height="710">
+        <text id="21:162" name="screen__headline" x="26.327373504638672" y="160" width="347.65474569797516" height="34.76862680912018" />
+        <frame id="21:174" name="form" x="20" y="234.7686309814453" width="335" height="295.5624694824219">
+          <instance id="95:2570" name="form-field--focused" x="0" y="0" width="335" height="75.85415649414062" />
+          <instance id="95:2575" name="form-field--default" x="0" y="91.85415649414062" width="335" height="75.85415649414062" />
+          <instance id="95:2579" name="form-field--default" x="0" y="183.70831298828125" width="335" height="75.85415649414062" />
+          <frame id="21:187" name="form__consent" x="0" y="275.5624694824219" width="327" height="20">
+            <rounded-rectangle id="21:188" name="form__checkbox" x="0" y="0" width="20" height="20" />
+            <text id="21:189" name="form__consent-text" x="30" y="0" width="290" height="20" />
+          </frame>
+        </frame>
+      </frame>
+      <frame id="97:2306" name="screen__actions" x="0" y="710" width="375" height="102">
+        <instance id="80:16387" name="button--primary" x="24" y="0" width="327" height="54" />
+      </frame>
+      <instance id="97:2307" name="brand-tag" x="24" y="54" width="146.1824188232422" height="19.733545303344727" />
+      <instance id="106:4705" name="status-bar" x="0" y="0" width="375" height="50" />
+    </frame>
+    <instance id="95:2116" name="caption" x="104" y="925" width="375" height="74" />
+    <frame id="21:195" name="screen--04-sting-charged" x="512" y="89" width="375" height="812" />
+    <instance id="95:2119" name="caption" x="512" y="925" width="375" height="74" />
+  </section>
+  <section id="21:240" name="flow--02-onboarding" x="987" y="0" width="971" height="1060">
+    <frame id="21:241" name="screen--05-how-to-play" x="94" y="89" width="375" height="812" />
+    <instance id="95:2122" name="caption" x="94" y="925" width="375" height="74" />
+    <frame id="21:292" name="screen--06-beat-the-rival" x="502" y="89" width="375" height="812" />
+    <instance id="95:2125" name="caption" x="502" y="925" width="375" height="74" />
+  </section>
+  <section id="22:215" name="flow--03-countdown" x="1964" y="0" width="1340" height="1060">
+    <frame id="22:216" name="screen--07a-lights-on-get" x="94" y="89" width="375" height="812">
+      <instance id="22:217" name="backdrop--track" x="0" y="0" width="375" height="812" />
+      <instance id="283:10515" name="runner--rival" x="185.75" y="302" width="178.5" height="238" />
+      <instance id="283:10516" name="runner--max" x="10.75" y="302" width="178.5" height="238" />
+      <frame id="99:2308" name="screen__content" x="0" y="0" width="375" height="812">
+        <instance id="95:2452" name="start-lights--5" x="28" y="90" width="319" height="132" />
+        <text id="22:316" name="screen__headline" x="12.825756072998047" y="262" width="400.65151154994965" height="70.47694623470306" />
+      </frame>
+      <instance id="106:4789" name="status-bar" x="0" y="0" width="375" height="50" />
+    </frame>
+    <frame id="86:2474" name="screen--07b-lights-on-set" x="509" y="89" width="375" height="812">
+      <instance id="86:2475" name="backdrop--track" x="0" y="0" width="375" height="812" />
+      <instance id="283:10506" name="runner--rival" x="185.75" y="302" width="178.5" height="238" />
+      <instance id="283:10507" name="runner--max" x="10.75" y="302" width="178.5" height="238" />
+      <frame id="99:2309" name="screen__content" x="0" y="0" width="375" height="812">
+        <instance id="95:2469" name="start-lights--3" x="28" y="90" width="319" height="132" />
+        <text id="86:2494" name="screen__headline" x="12.825756072998047" y="262" width="400.65151154994965" height="70.47694623470306" />
+      </frame>
+      <instance id="106:4810" name="status-bar" x="0" y="0" width="375" height="50" />
+    </frame>
+    <instance id="95:2128" name="caption" x="94" y="925" width="375" height="74" />
+    <frame id="86:1864" name="screen--08-lights-out" x="917" y="89" width="375" height="812">
+      <instance id="86:1865" name="backdrop--track" x="0" y="0" width="375" height="812" />
+      <ellipse id="86:1866" name="screen__flash" x="-72" y="120" width="520" height="520" />
+      <instance id="283:10497" name="runner--rival" x="185.75" y="302" width="178.5" height="238" />
+      <instance id="283:10498" name="runner--max" x="10.75" y="302" width="178.5" height="238" />
+      <rounded-rectangle id="86:1883" name="screen__wordmark" x="-27" y="274" width="535" height="52" />
+      <frame id="99:2310" name="screen__content" x="0" y="0" width="375" height="812">
+        <instance id="95:2486" name="start-lights--0" x="28" y="90" width="319" height="132" />
+      </frame>
+      <instance id="106:4831" name="status-bar" x="0" y="0" width="375" height="50" />
+    </frame>
+    <instance id="95:2131" name="caption" x="917" y="925" width="375" height="74" />
+  </section>
+  <section id="22:494" name="flow--04-playing-state" x="3310" y="0" width="3827" height="1060">
+    <frame id="22:495" name="screen--09-race-on" x="94" y="89" width="375" height="812">
+      <instance id="22:496" name="backdrop--track" x="0" y="0" width="375" height="812" />
+      <rounded-rectangle id="22:614" name="screen__fade" x="0" y="470" width="375" height="342" />
+      <instance id="22:577" name="runner--rival" x="185.75" y="302" width="178.5" height="238" />
+      <instance id="22:591" name="runner--max" x="10.75" y="302" width="178.5" height="238" />
+      <instance id="80:16563" name="hud--top" x="0" y="0" width="375" height="108.4320068359375">
+        <frame id="I80:16563;80:16532" name="hud__header" x="20" y="48" width="335" height="44.4320068359375">
+          <frame id="I80:16563;80:16533" name="hud__players" x="0" y="0" width="335" height="24.432008743286133">
+            <text id="I80:16563;80:16534" name="hud__name--max" x="8.892524719238281" y="0" width="52.892524003982544" height="24.432008028030396" />
+            <text id="I80:16563;80:16535" name="hud__timer" x="125.09121704101562" y="2.349231481552124" width="87.1824232339859" height="19.733544945716858" />
+            <text id="I80:16563;80:16536" name="hud__name--rival" x="279" y="0" width="64.89252400398254" height="24.432008028030396" />
+          </frame>
+          <slot id="I80:16563;80:16537" name="hud__progress" x="0" y="36.4320068359375" width="335" height="8">
+            <vector id="I80:16563;80:16537;283:10575" name="hud__progress-track" x="0" y="0" width="335" height="8" />
+            <ellipse id="I80:16563;80:16537;283:10576" name="hud__marker--rival" x="91" y="-3" width="14" height="14" />
+            <ellipse id="I80:16563;80:16537;283:10577" name="hud__marker--max" x="91" y="-3" width="14" height="14" />
+          </slot>
+        </frame>
+      </instance>
+      <frame id="100:2308" name="screen__content" x="0" y="108.4320068359375" width="375" height="483.5679931640625" />
+      <instance id="90:3081" name="hud--bottom" x="0" y="592" width="375" height="220">
+        <frame id="I90:3081;90:2913" name="hud__boosts" x="20" y="72" width="51" height="116">
+          <frame id="I90:3081;90:2914" name="hud__boost-icons" x="0" y="0" width="22.545454025268555" height="94">
+            <instance id="I90:3081;90:2966" name="icon-bolt--empty" x="6" y="0" width="16.545454025268555" height="26" />
+            <instance id="I90:3081;90:2963" name="icon-bolt--empty" x="6" y="34" width="16.545454025268555" height="26" />
+            <instance id="I90:3081;90:2960" name="icon-bolt--empty" x="6" y="68" width="16.545454025268555" height="26" />
+          </frame>
+          <text id="I90:3081;90:2918" name="hud__boosts-label" x="0" y="102" width="51" height="14" />
+        </frame>
+        <frame id="I90:3081;90:2919" name="hud__energy" x="285" y="16" width="70" height="172">
+          <frame id="I90:3081;90:2920" name="hud__energy-meter" x="0" y="0" width="70" height="149">
+            <slot id="I90:3081;90:2921" name="hud__energy-bar" x="17" y="0" width="36" height="120" />
+            <text id="I90:3081;90:2924" name="hud__energy-value" x="0" y="128" width="70" height="21" />
+          </frame>
+          <text id="I90:3081;90:2925" name="hud__energy-label" x="0" y="157" width="70" height="15" />
+        </frame>
+        <instance id="I90:3081;90:3048" name="boost-button--default" x="71" y="0" width="220" height="220" />
+      </instance>
+      <instance id="106:4852" name="status-bar" x="0" y="0" width="375" height="50" />
+    </frame>
+    <instance id="95:2134" name="caption" x="94" y="925" width="375" height="94" />
+    <frame id="22:630" name="screen--10-boost-window-open" x="502" y="89" width="375" height="812" />
+    <instance id="95:2137" name="caption" x="502" y="925" width="375" height="94" />
+    <frame id="22:767" name="screen--11-boost-1-perfect" x="910" y="89" width="375" height="812">
+      <instance id="22:768" name="backdrop--track" x="0" y="0" width="375" height="812" />
+      <rounded-rectangle id="22:898" name="screen__fade" x="0" y="470" width="375" height="342" />
+      <instance id="22:861" name="runner--rival" x="184.89498901367188" y="313.7200012207031" width="189.2100067138672" height="252.27999877929688" />
+      <instance id="22:875" name="runner--max" x="10.75" y="302" width="178.5" height="238" />
+      <instance id="80:16611" name="hud--top" x="0" y="0" width="375" height="108.4320068359375">
+        <frame id="I80:16611;80:16532" name="hud__header" x="20" y="48" width="335" height="44.4320068359375">
+          <frame id="I80:16611;80:16533" name="hud__players" x="0" y="0" width="335" height="24.432008743286133">
+            <text id="I80:16611;80:16534" name="hud__name--max" x="8.892524719238281" y="0" width="52.892524003982544" height="24.432008028030396" />
+            <text id="I80:16611;80:16535" name="hud__timer" x="125.09121704101562" y="2.349231481552124" width="87.1824232339859" height="19.733544945716858" />
+            <text id="I80:16611;80:16536" name="hud__name--rival" x="279" y="0" width="64.89252400398254" height="24.432008028030396" />
+          </frame>
+          <slot id="I80:16611;80:16537" name="hud__progress" x="0" y="36.4320068359375" width="335" height="8">
+            <vector id="I80:16611;80:16537;80:16608" name="Race progress" x="0" y="0" width="335" height="8" />
+            <ellipse id="I80:16611;80:16537;80:16609" name="Progress / RIVAL" x="131" y="-3" width="14" height="14" />
+            <ellipse id="I80:16611;80:16537;80:16610" name="Progress / MAX" x="143" y="-3" width="14" height="14" />
+          </slot>
+        </frame>
+      </instance>
+      <frame id="100:2310" name="screen__content" x="0" y="108.4320068359375" width="375" height="483.5679931640625">
+        <instance id="80:16770" name="feedback--perfect" x="8" y="80" width="359" height="98.64801025390625" />
+      </frame>
+      <instance id="90:3157" name="hud--bottom" x="0" y="592" width="375" height="220">
+        <frame id="I90:3157;90:2913" name="hud__boosts" x="20" y="72" width="51" height="116">
+          <frame id="I90:3157;90:2914" name="hud__boost-icons" x="0" y="0" width="22.545454025268555" height="94">
+            <instance id="I90:3157;90:2966" name="icon-bolt--empty" x="6" y="0" width="16.545454025268555" height="26" />
+            <instance id="I90:3157;90:2963" name="icon-bolt--empty" x="6" y="34" width="16.545454025268555" height="26" />
+            <instance id="I90:3157;90:2960" name="icon-bolt--perfect" x="6" y="68" width="16.545454025268555" height="26" />
+          </frame>
+          <text id="I90:3157;90:2918" name="hud__boosts-label" x="0" y="102" width="51" height="14" />
+        </frame>
+        <frame id="I90:3157;90:2919" name="hud__energy" x="285" y="16" width="70" height="172">
+          <frame id="I90:3157;90:2920" name="hud__energy-meter" x="0" y="0" width="70" height="149">
+            <slot id="I90:3157;90:2921" name="hud__energy-bar" x="17" y="0" width="36" height="120" />
+            <text id="I90:3157;90:2924" name="hud__energy-value" x="0" y="128" width="70" height="21" />
+          </frame>
+          <text id="I90:3157;90:2925" name="hud__energy-label" x="0" y="157" width="70" height="15" />
+        </frame>
+        <instance id="I90:3157;90:3048" name="boost-button" x="71" y="0" width="220" height="220" />
+      </instance>
+      <instance id="106:4894" name="status-bar" x="0" y="0" width="375" height="50" />
+    </frame>
+    <instance id="95:2140" name="caption" x="910" y="925" width="375" height="74" />
+    <frame id="22:919" name="screen--12-boost-2-early" x="1318" y="89" width="375" height="812" />
+    <instance id="95:2143" name="caption" x="1318" y="925" width="375" height="74" />
+    <frame id="22:1059" name="screen--13-boost-3-perfect" x="1726" y="89" width="375" height="812">
+      <instance id="22:1060" name="backdrop--track" x="0" y="0" width="375" height="812" />
+      <rounded-rectangle id="22:1190" name="screen__fade" x="0" y="470" width="375" height="342" />
+      <instance id="22:1153" name="runner--rival" x="184.46749877929688" y="319.5799865722656" width="194.56500244140625" height="259.4200134277344" />
+      <instance id="22:1167" name="runner--max" x="10.75" y="302" width="178.5" height="238" />
+      <instance id="80:16655" name="hud--top" x="0" y="0" width="375" height="108.4320068359375">
+        <frame id="I80:16655;80:16532" name="hud__header" x="20" y="48" width="335" height="44.4320068359375">
+          <frame id="I80:16655;80:16533" name="hud__players" x="0" y="0" width="335" height="24.432008743286133">
+            <text id="I80:16655;80:16534" name="hud__name--max" x="8.892524719238281" y="0" width="52.892524003982544" height="24.432008028030396" />
+            <text id="I80:16655;80:16535" name="hud__timer" x="125.09121704101562" y="2.349231481552124" width="87.1824232339859" height="19.733544945716858" />
+            <text id="I80:16655;80:16536" name="hud__name--rival" x="279" y="0" width="64.89252400398254" height="24.432008028030396" />
+          </frame>
+          <slot id="I80:16655;80:16537" name="hud__progress" x="0" y="36.4320068359375" width="335" height="8">
+            <vector id="I80:16655;80:16537;80:16652" name="Race progress" x="0" y="0" width="335" height="8" />
+            <ellipse id="I80:16655;80:16537;80:16653" name="Progress / RIVAL" x="261" y="-3" width="14" height="14" />
+            <ellipse id="I80:16655;80:16537;80:16654" name="Progress / MAX" x="280" y="-3" width="14" height="14" />
+          </slot>
+        </frame>
+      </instance>
+      <frame id="100:2312" name="screen__content" x="0" y="108.4320068359375" width="375" height="483.5679931640625">
+        <instance id="80:16786" name="feedback--perfect" x="8" y="80" width="359" height="98.64801025390625" />
+      </frame>
+      <instance id="90:3285" name="hud--bottom" x="0" y="592" width="375" height="220">
+        <frame id="I90:3285;90:2913" name="hud__boosts" x="20" y="72" width="51" height="116">
+          <frame id="I90:3285;90:2914" name="hud__boost-icons" x="0" y="0" width="22.545454025268555" height="94">
+            <instance id="I90:3285;90:2966" name="icon-bolt--perfect" x="6" y="0" width="16.545454025268555" height="26" />
+            <instance id="I90:3285;90:2963" name="icon-bolt--missed" x="6" y="34" width="16.545454025268555" height="26" />
+            <instance id="I90:3285;90:2960" name="icon-bolt--perfect" x="6" y="68" width="16.545454025268555" height="26" />
+          </frame>
+          <text id="I90:3285;90:2918" name="hud__boosts-label" x="0" y="102" width="51" height="14" />
+        </frame>
+        <frame id="I90:3285;90:2919" name="hud__energy" x="285" y="16" width="70" height="172">
+          <frame id="I90:3285;90:2920" name="hud__energy-meter" x="0" y="0" width="70" height="149">
+            <slot id="I90:3285;90:2921" name="hud__energy-bar" x="17" y="0" width="36" height="120" />
+            <text id="I90:3285;90:2924" name="hud__energy-value" x="0" y="128" width="70" height="21" />
+          </frame>
+          <text id="I90:3285;90:2925" name="hud__energy-label" x="0" y="157" width="70" height="15" />
+        </frame>
+        <instance id="I90:3285;90:3048" name="boost-button" x="71" y="0" width="220" height="220" />
+      </instance>
+      <instance id="106:4936" name="status-bar" x="0" y="0" width="375" height="50" />
+    </frame>
+    <instance id="95:2146" name="caption" x="1726" y="925" width="375" height="74" />
+    <frame id="22:1211" name="screen--14-last-metres" x="2134" y="89" width="375" height="812">
+      <instance id="22:1212" name="backdrop--track" x="0" y="0" width="375" height="812" />
+      <rounded-rectangle id="22:1343" name="screen__fade" x="0" y="470" width="375" height="342" />
+      <ellipse id="22:1293" name="screen__flash" x="-62" y="150" width="500" height="420" />
+      <instance id="22:1306" name="runner--rival" x="183.61248779296875" y="331.29998779296875" width="205.27500915527344" height="273.70001220703125" />
+      <instance id="22:1320" name="runner--max" x="22" y="309" width="166" height="221.99998474121094" />
+      <instance id="80:16670" name="hud--top" x="0" y="0" width="375" height="108.4320068359375">
+        <frame id="I80:16670;80:16532" name="hud__header" x="20" y="48" width="335" height="44.4320068359375">
+          <frame id="I80:16670;80:16533" name="hud__players" x="0" y="0" width="335" height="24.432008743286133">
+            <text id="I80:16670;80:16534" name="hud__name--max" x="8.892524719238281" y="0" width="52.892524003982544" height="24.432008028030396" />
+            <text id="I80:16670;80:16535" name="hud__timer" x="125.09121704101562" y="2.349231481552124" width="87.1824232339859" height="19.733544945716858" />
+            <text id="I80:16670;80:16536" name="hud__name--rival" x="279" y="0" width="64.89252400398254" height="24.432008028030396" />
+          </frame>
+          <slot id="I80:16670;80:16537" name="hud__progress" x="0" y="36.4320068359375" width="335" height="8">
+            <vector id="I80:16670;80:16537;80:16667" name="Race progress" x="0" y="0" width="335" height="8" />
+            <ellipse id="I80:16670;80:16537;80:16668" name="Progress / RIVAL" x="267" y="-3" width="14" height="14" />
+            <ellipse id="I80:16670;80:16537;80:16669" name="Progress / MAX" x="291" y="-3" width="14" height="14" />
+          </slot>
+        </frame>
+      </instance>
+      <frame id="100:2313" name="screen__content" x="0" y="108.4320068359375" width="375" height="483.5679931640625" />
+      <instance id="90:3320" name="hud--bottom" x="0" y="592" width="375" height="220">
+        <frame id="I90:3320;90:2913" name="hud__boosts" x="20" y="72" width="51" height="116">
+          <frame id="I90:3320;90:2914" name="hud__boost-icons" x="0" y="0" width="22.545454025268555" height="94">
+            <instance id="I90:3320;90:2966" name="icon-bolt--perfect" x="6" y="0" width="16.545454025268555" height="26" />
+            <instance id="I90:3320;90:2963" name="icon-bolt--missed" x="6" y="34" width="16.545454025268555" height="26" />
+            <instance id="I90:3320;90:2960" name="icon-bolt--perfect" x="6" y="68" width="16.545454025268555" height="26" />
+          </frame>
+          <text id="I90:3320;90:2918" name="hud__boosts-label" x="0" y="102" width="51" height="14" />
+        </frame>
+        <frame id="I90:3320;90:2919" name="hud__energy" x="285" y="16" width="70" height="172">
+          <frame id="I90:3320;90:2920" name="hud__energy-meter" x="0" y="0" width="70" height="149">
+            <slot id="I90:3320;90:2921" name="hud__energy-bar" x="17" y="0" width="36" height="120" />
+            <text id="I90:3320;90:2924" name="hud__energy-value" x="0" y="128" width="70" height="21" />
+          </frame>
+          <text id="I90:3320;90:2925" name="hud__energy-label" x="0" y="157" width="70" height="15" />
+        </frame>
+        <instance id="I90:3320;90:3048" name="boost-button" x="71" y="0" width="220" height="220" />
+      </instance>
+      <instance id="106:4957" name="status-bar" x="0" y="0" width="375" height="50" />
+    </frame>
+    <instance id="95:2149" name="caption" x="2134" y="925" width="375" height="74" />
+    <frame id="31:971" name="screen--15-f1-drop-in" x="2542" y="89" width="375" height="812">
+      <instance id="31:972" name="f1-scene--drop-in" x="0" y="0" width="375" height="812" />
+      <instance id="80:16685" name="hud--top" x="0" y="0" width="375" height="108.4320068359375" hidden="true" />
+      <instance id="106:4978" name="status-bar" x="0" y="0" width="375" height="50" hidden="true" />
+      <instance id="283:10457" name="hud--top" x="0" y="0" width="375" height="108.4320068359375">
+        <frame id="I283:10457;80:16532" name="hud__header" x="20" y="48" width="335" height="44.4320068359375">
+          <frame id="I283:10457;80:16533" name="hud__players" x="0" y="0" width="335" height="24.432008743286133">
+            <text id="I283:10457;80:16534" name="hud__name--max" x="8.892524719238281" y="0" width="52.892524003982544" height="24.432008028030396" />
+            <text id="I283:10457;80:16535" name="hud__timer" x="125.09121704101562" y="2.349231481552124" width="87.1824232339859" height="19.733544945716858" />
+            <text id="I283:10457;80:16536" name="hud__name--rival" x="279" y="0" width="64.89252400398254" height="24.432008028030396" />
+          </frame>
+          <slot id="I283:10457;80:16537" name="hud__progress" x="0" y="36.4320068359375" width="335" height="8">
+            <vector id="I283:10457;80:16537;283:10454" name="hud__progress-track" x="0" y="0" width="335" height="8" />
+            <ellipse id="I283:10457;80:16537;283:10455" name="hud__marker--rival" x="279" y="-3" width="14" height="14" />
+            <ellipse id="I283:10457;80:16537;283:10456" name="hud__marker--max" x="317" y="-3" width="14" height="14" />
+          </slot>
+        </frame>
+      </instance>
+      <instance id="283:10458" name="status-bar" x="0" y="0" width="375" height="50" />
+    </frame>
+    <instance id="95:2152" name="caption" x="2542" y="925" width="375" height="94" />
+    <frame id="31:1142" name="screen--16-camera-behind-the-finish-line" x="2950" y="89" width="375" height="812">
+      <instance id="31:1143" name="f1-scene--head-on" x="0" y="0" width="375" height="812" />
+      <instance id="80:16715" name="hud--top" x="0" y="0" width="375" height="108.4320068359375" hidden="true" />
+      <instance id="106:5020" name="status-bar" x="0" y="0" width="375" height="50" hidden="true" />
+      <instance id="283:10413" name="hud--top" x="0" y="0" width="375" height="108.4320068359375">
+        <frame id="I283:10413;80:16532" name="hud__header" x="20" y="48" width="335" height="44.4320068359375">
+          <frame id="I283:10413;80:16533" name="hud__players" x="0" y="0" width="335" height="24.432008743286133">
+            <text id="I283:10413;80:16534" name="hud__name--max" x="8.892524719238281" y="0" width="52.892524003982544" height="24.432008028030396" />
+            <text id="I283:10413;80:16535" name="hud__timer" x="125.09121704101562" y="2.349231481552124" width="87.1824232339859" height="19.733544945716858" />
+            <text id="I283:10413;80:16536" name="hud__name--rival" x="279" y="0" width="64.89252400398254" height="24.432008028030396" />
+          </frame>
+          <slot id="I283:10413;80:16537" name="hud__progress" x="0" y="36.4320068359375" width="335" height="8">
+            <vector id="I283:10413;80:16537;283:10410" name="hud__progress-track" x="0" y="0" width="335" height="8" />
+            <ellipse id="I283:10413;80:16537;283:10411" name="hud__marker--rival" x="279" y="-3" width="14" height="14" />
+            <ellipse id="I283:10413;80:16537;283:10412" name="hud__marker--max" x="323" y="-3" width="14" height="14" />
+          </slot>
+        </frame>
+      </instance>
+      <instance id="283:10414" name="status-bar" x="0" y="0" width="375" height="50" />
+    </frame>
+    <instance id="95:2158" name="caption" x="2950" y="925" width="375" height="74" />
+    <frame id="31:1241" name="screen--17-crossing-the-finish-line" x="3358" y="89" width="375" height="812">
+      <instance id="31:1242" name="f1-scene--victory" x="0" y="0" width="375" height="812" />
+      <instance id="108:5151" name="hud--top" x="0" y="0" width="375" height="108.4320068359375" hidden="true" />
+      <instance id="106:5041" name="status-bar" x="0" y="0" width="375" height="50" hidden="true" />
+      <instance id="283:10369" name="hud--top" x="0" y="0" width="375" height="108.4320068359375">
+        <frame id="I283:10369;80:16532" name="hud__header" x="20" y="48" width="335" height="44.4320068359375">
+          <frame id="I283:10369;80:16533" name="hud__players" x="0" y="0" width="335" height="24.432008743286133">
+            <text id="I283:10369;80:16534" name="hud__name--max" x="8.892524719238281" y="0" width="52.892524003982544" height="24.432008028030396" />
+            <text id="I283:10369;80:16535" name="hud__timer" x="125.09121704101562" y="2.349231481552124" width="87.1824232339859" height="19.733544945716858" />
+            <text id="I283:10369;80:16536" name="hud__name--rival" x="279" y="0" width="64.89252400398254" height="24.432008028030396" />
+          </frame>
+          <slot id="I283:10369;80:16537" name="hud__progress" x="0" y="36.4320068359375" width="335" height="8">
+            <vector id="I283:10369;80:16537;283:10366" name="hud__progress-track" x="0" y="0" width="335" height="8" />
+            <ellipse id="I283:10369;80:16537;283:10367" name="hud__marker--rival" x="279" y="-3" width="14" height="14" />
+            <ellipse id="I283:10369;80:16537;283:10368" name="hud__marker--max" x="323" y="-3" width="14" height="14" />
+          </slot>
+        </frame>
+      </instance>
+      <instance id="283:10370" name="status-bar" x="0" y="0" width="375" height="50" />
+    </frame>
+    <instance id="95:2161" name="caption" x="3358" y="925" width="375" height="74" />
+  </section>
+  <section id="23:1069" name="flow--05-result-reward" x="7143" y="0" width="1799" height="1060">
+    <instance id="95:2164" name="caption" x="100" y="925" width="375" height="74" />
+    <frame id="23:1135" name="screen--19-lose-rival-wins" x="508" y="89" width="375" height="812">
+      <instance id="23:1136" name="backdrop--ui" x="0" y="0" width="375" height="812" />
+      <frame id="101:2314" name="screen__content" x="0" y="0" width="375" height="640">
+        <text id="23:1180" name="screen__headline" x="15.866463661193848" y="422.7741394042969" width="374.7329270839691" height="43.225860357284546" />
+        <frame id="101:2315" name="screen__copy" x="8" y="496" width="359" height="46">
+          <text id="23:1181" name="screen__text" x="34" y="0" width="291" height="46" />
+        </frame>
+        <frame id="23:1182" name="screen__boosts" x="138.86363220214844" y="572" width="97.2727279663086" height="30">
+          <vector id="23:1183" name="screen__boost" x="0" y="0" width="19.090909957885742" height="30" />
+          <vector id="23:1184" name="screen__boost" x="39.090911865234375" y="0" width="19.090909957885742" height="30" />
+          <vector id="23:1185" name="screen__boost" x="78.18182373046875" y="0" width="19.090909957885742" height="30" />
+        </frame>
+      </frame>
+      <frame id="80:16501" name="screen__actions" x="0" y="640" width="375" height="172">
+        <instance id="80:16489" name="button--primary" x="24" y="0" width="327" height="54" />
+        <instance id="80:16498" name="button--secondary" x="24" y="70" width="327" height="54" />
+      </frame>
+      <instance id="101:2316" name="brand-tag" x="24" y="54" width="146.1824188232422" height="19.733545303344727" />
+      <instance id="106:5083" name="status-bar" x="0" y="0" width="375" height="50" />
+    </frame>
+    <instance id="95:2167" name="caption" x="508" y="925" width="375" height="74" />
+    <frame id="23:1193" name="screen--20-score-card" x="916" y="89" width="375" height="812">
+      <instance id="23:1194" name="backdrop--ui" x="0" y="0" width="375" height="812" />
+      <frame id="101:2319" name="screen__content" x="0" y="0" width="375" height="570">
+        <frame id="23:1224" name="score-card" x="53.427589416503906" y="102.00000762939453" width="311.06029964983463" height="424.6155262738466">
+          <vector id="23:1225" name="score-card__streak" x="-40" y="0" width="171.2521681934595" height="417.2884925454855" />
+          <vector id="23:1226" name="score-card__streak" x="30" y="0" width="171.2521681934595" height="417.2884925454855" />
+          <vector id="23:1227" name="score-card__streak" x="100.00032806396484" y="-0.000016002099073375575" width="171.2521681934595" height="417.2884925454855" />
+          <vector id="23:1228" name="score-card__streak" x="169.9995880126953" y="0.000019334402168169618" width="171.2521681934595" height="417.2884925454855" />
+          <vector id="23:1229" name="score-card__streak" x="240" y="0" width="171.2521681934595" height="417.2884925454855" />
+          <instance id="95:2609" name="kerb--lg" x="-4.000349998474121" y="394" width="336.37689077854156" height="33.56295311450958" />
+          <text id="23:1230" name="score-card__tag" x="0" y="26" width="290.38759734481573" height="30.156869664788246" />
+          <vector id="23:1231" name="score-card__icon" x="128.4545440673828" y="51" width="35.767026975821864" height="53.66057882228495" />
+          <text id="23:1232" name="score-card__title" x="20.929996490478516" y="113" width="320.29590341448784" height="105.88871540129185" />
+          <frame id="101:2318" name="score-card__results" x="4" y="216.02957153320312" width="288.9928916171193" height="155.56550033390522">
+            <instance id="95:2585" name="boost-result--perfect" x="25" y="11" width="233.67081271111965" height="50.08986300230026" />
+            <instance id="95:2589" name="boost-result--missed" x="25" y="57" width="233.67081271111965" height="50.08986300230026" />
+            <instance id="95:2592" name="boost-result--perfect" x="25" y="103" width="233.67081271111965" height="50.08986300230026" />
+          </frame>
+        </frame>
+      </frame>
+      <frame id="80:16508" name="screen__actions" x="0" y="570" width="375" height="242">
+        <instance id="80:16509" name="button--primary" x="24" y="0" width="327" height="54" />
+        <instance id="80:16510" name="button--secondary" x="24" y="70" width="327" height="54" />
+        <instance id="80:16514" name="button--secondary" x="24" y="140" width="327" height="54" />
+      </frame>
+      <instance id="101:2320" name="brand-tag" x="24" y="54" width="146.1824188232422" height="19.733545303344727" />
+      <instance id="106:5104" name="status-bar" x="0" y="0" width="375" height="50" />
+    </frame>
+    <instance id="95:2170" name="caption" x="916" y="925" width="375" height="74" />
+    <frame id="23:1272" name="screen--21-instant-reward" x="1324" y="89" width="375" height="812">
+      <instance id="23:1273" name="backdrop--ui" x="0" y="0" width="375" height="812" />
+      <frame id="102:2315" name="screen__content" x="0" y="0" width="375" height="640">
+        <frame id="102:2316" name="screen__heading" x="24" y="100" width="327" height="101.17540740966797">
+          <text id="23:1303" name="screen__eyebrow" x="0" y="0" width="327" height="16" />
+          <text id="23:1304" name="screen__headline" x="13.680805206298828" y="26" width="354.3616123199463" height="75.1754093170166" />
+        </frame>
+        <frame id="23:1305" name="coupon" x="42.5" y="237.1754150390625" width="290" height="250">
+          <frame id="102:2312" name="coupon__body" x="0" y="0" width="290" height="231">
+            <instance id="23:1306" name="sting-can" x="20" y="20" width="94.04999542236328" height="209" />
+            <frame id="102:2313" name="coupon__info" x="130.04998779296875" y="20" width="140" height="190">
+              <text id="23:1308" name="coupon__title" x="0" y="16" width="125" height="28" />
+              <text id="23:1309" name="coupon__text" x="0" y="55" width="140" height="34" />
+              <frame id="23:1310" name="coupon__qr" x="0" y="100" width="110" height="90">
+                <text id="23:1311" name="coupon__qr-label" x="38.5" y="26" width="33" height="38" />
+              </frame>
+            </frame>
+          </frame>
+          <frame id="102:2314" name="coupon__footer" x="0" y="231" width="290" height="19">
+            <text id="23:1313" name="coupon__code" x="0" y="3" width="290" height="13" />
+          </frame>
+        </frame>
+        <frame id="23:1314" name="badge" x="77.40908813476562" y="523.1754150390625" width="220.18182373046875" height="40">
+          <vector id="23:1315" name="badge__icon" x="18" y="12" width="10.181818008422852" height="16" />
+          <text id="23:1316" name="badge__text" x="36.18181610107422" y="12" width="166" height="16" />
+        </frame>
+      </frame>
+      <frame id="80:16516" name="screen__actions" x="0" y="640" width="375" height="172">
+        <instance id="80:16517" name="button--primary" x="24" y="0" width="327" height="54" />
+        <instance id="80:16519" name="button--secondary" x="24" y="70" width="327" height="54" />
+      </frame>
+      <instance id="102:2317" name="brand-tag" x="24" y="54" width="146.1824188232422" height="19.733545303344727" />
+      <instance id="106:5125" name="status-bar" x="0" y="0" width="375" height="50" />
+    </frame>
+    <instance id="95:2173" name="caption" x="1324" y="925" width="375" height="74" />
+    <frame id="27:933" name="screen--18-win-f1-victory" x="100" y="89" width="375" height="812">
+      <instance id="27:934" name="backdrop--ui" x="0" y="0" width="375" height="812" />
+      <ellipse id="27:965" name="screen__glow" x="-32" y="200" width="440" height="300" />
+      <frame id="101:2309" name="screen__header" x="0" y="0" width="375" height="116" />
+      <frame id="101:2310" name="screen__content" x="0" y="116" width="375" height="594">
+        <text id="27:979" name="screen__headline" x="8.550503730773926" y="432.1612243652344" width="392.10100769996643" height="46.984630823135376" />
+        <text id="27:991" name="screen__text" x="3.2491915225982666" y="499.1458740234375" width="381.49838292598724" height="17.854159712791443" />
+      </frame>
+      <frame id="101:2311" name="screen__actions" x="0" y="710" width="375" height="102">
+        <instance id="80:16495" name="button--primary" x="24" y="0" width="327" height="54" />
+      </frame>
+      <instance id="101:2312" name="brand-tag" x="24" y="54" width="146.1824188232422" height="19.733545303344727" />
+      <instance id="106:5062" name="status-bar" x="0" y="0" width="375" height="50" />
+    </frame>
+  </section>
+  <rounded-rectangle id="113:10301" name="ChatGPT-Bild 2. Okt. 2026, 12_06_22-1 1" x="1015" y="-3694" width="315" height="564" />
+  <rounded-rectangle id="113:10302" name="ChatGPT-Bild 2. Okt. 2026, 12_06_23-2 1" x="1343" y="-3694" width="315" height="564" />
+  <rounded-rectangle id="113:10303" name="ChatGPT-Bild 2. Okt. 2026, 12_06_24-3 1" x="1671" y="-3694" width="315" height="564" />
+  <rounded-rectangle id="113:10304" name="ChatGPT-Bild 2. Okt. 2026, 12_06_25-4 1" x="2000" y="-3694" width="314" height="564" />
+  <rounded-rectangle id="113:10305" name="ChatGPT-Bild 2. Okt. 2026, 12_06_26-5 1" x="2328" y="-3694" width="315" height="564" />
+</canvas>
+
+IMPORTANT: After you call this tool, you MUST call get_design_context if trying to implement the design, since this tool only returns metadata. If you do not call get_design_context, the agent will not be able to implement the design.

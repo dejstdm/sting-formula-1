@@ -1,6 +1,6 @@
 # Concept 4: the Figma design, in PixiJS
 
-The client's Figma design (file `n5qDtsydLp1HXcWjsFPJfD`) running at `/concept-4/`. PixiJS 8 on WebGL draws the race; the screens around it are plain HTML and CSS. Live: https://sting-formula-1.vercel.app/concept-4/
+The client's Figma design (file `n5qDtsydLp1HXcWjsFPJfD`) running at `/concept-4/`. PixiJS 8 on WebGL draws the race; the screens around it are plain HTML and CSS. Live (only after the branch is merged to `main`): https://sting-formula-1.vercel.app/concept-4/
 
 ```bash
 npm run dev:concept-4        # http://localhost:5177/concept-4/
@@ -13,9 +13,13 @@ Handoff and history: `doc/2026-10-06-concept-4-handoff.md`, `doc/2026-10-06-conc
 
 ## The game
 
-Flow: registration (visual only) → charging → how to play → rival → start lights → race → F1 finish → win or lose → prize (win only, visual only). Nothing typed is stored or sent. The first name is kept in memory for the HUD.
+Flow: registration (visual only) → charging → how to play → rival → start lights → race → F1 finish → win ("MAX WINS", "See my card") or lose → card (win only, visual only). Nothing typed is stored or sent. The first name is kept in memory for the HUD.
 
-The race lasts 15 seconds. Energy drains and the runner slows. Three timing rings close on the Boost button, at 5.9, 8.9 and 11.9 seconds. The line is crossed at 13.0 s; the Sting F1 car sweeps past from 13.0 to 15.0 s.
+The race runs 13 seconds. Energy drains and the runner slows. Three timing rings close on the Boost button, at 5.9, 8.9 and 11.9 seconds. The line is crossed at 13.0 s.
+
+**Screens.** Registration, charging, how to play, beat the rival, the countdown (GET. / SET. / STING.), win, lose, score card and instant reward are built to the Figma frames 03 to 08 and 18 to 21, position by position (375 x 812 design space). The notes and assets for each are in `doc/concept-4/figma-start/`, `figma-s2/` and `figma-flow/`. The race HUD (Figma 09 to 14) is drawn in PixiJS and has not been re-checked against those frames yet. Registration and the coupon are visual only: nothing is stored and no reward is issued.
+
+**Finish (win).** As in Figma screens 14 to 17, the finish is a run of hard cuts between full-screen illustrations: the Sting F1 car drops into MAX's lane (impact shake), the camera jumps to the far side of the line and the car comes head-on, then it crosses, centred, the picture freezes and confetti bursts, and the result screen opens. `src/race/finish.ts` has the timings (Figma gives none, so they are our guesses). The pictures are the designer's own (`public/sprites/finish-*.webp`, from `doc/concept-4/figma-finish/raw/`). **Finish (loss):** Figma shows no loss finish, only the result screen, so the picture dims for 2 seconds. Notes on what Figma says and does not say: `doc/concept-4/figma-finish/NOTES.md`.
 
 ### Rules (`src/race/rules.ts`)
 
@@ -52,7 +56,9 @@ Not done yet: ElevenLabs or recorded sound, and a voice. The synthesised sounds 
 
 ## Testing on real phones
 
-Open the live link with `?debug`: https://sting-formula-1.vercel.app/concept-4/?debug
+> **Not live yet.** Vercel deploys only `main`, and this work is still on the branch `concept-4-step-1` (not merged). The link below does not work until it is merged to `main`. Until then, test on a phone with a Vercel preview deployment of the branch, or with `npm run dev -w concept-4` on the same Wi-Fi (it listens on port 5177).
+
+Once on `main`, open the live link with `?debug`: https://sting-formula-1.vercel.app/concept-4/?debug
 
 1. Type the phone's name and OS (an iPhone never says which model it is).
 2. Press **AUTO TEST ×3**. The game plays three races with three Perfect Boosts, with no screens in between, so every phone does the same work. Do not touch the screen.
@@ -100,14 +106,15 @@ It plays one lap with `?auto=PPP`. The new screens and the F1 car were added aft
 
 ## Art
 
-`art/` holds the generation prompts and `pack.py`. Everything the game loads is in `public/sprites/`. The runners' run cycles and the rear view of the F1 car are generated with the Codex image tool (`art/gen.sh`), using the red male runner and the client's car as references. The client car reference lives only in `doc/concept-4/ref/` (git-ignored); copy it into `art/ref/` to regenerate the car, and do not commit it.
+`art/` holds the generation prompts and `pack.py`. Everything the game loads is in `public/sprites/`. The runners' run cycles are generated with the Codex image tool (`art/gen.sh`), using the red male runner as the reference. The F1 finish pictures are the designer's own Figma images (Magnific renders), resized by `pack.py`; check their licence with the client before anything public.
 
 ## Where things live
 
 ```
 src/main.ts            start-up, flow of screens and races, resize
 src/race/rules.ts      grades, Boost strengths, win rule (pure; used by sim)
-src/race/scene.ts      the race: energy, Boosts, steering to the result, F1 car
+src/race/scene.ts      the race: energy, Boosts, steering to the result
+src/race/finish.ts     the F1 finish: cuts, freeze-frame, confetti
 src/race/track.ts      ground-plane fit of the Figma backdrop, runner placement
 src/race/road.ts       shader that scrolls the road
 src/race/fx.ts         banner, flash, sparks, speed streaks

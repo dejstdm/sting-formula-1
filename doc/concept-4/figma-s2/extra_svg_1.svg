@@ -1,0 +1,36 @@
+<svg preserveAspectRatio="none" overflow="visible" style="display: block;" width="375" height="812" viewBox="0 0 375 812" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="backdrop__placeholder" clip-path="url(#clip0_0_103)">
+<rect id="backdrop__sky" width="375" height="260" fill="url(#paint0_linear_0_103)"/>
+<rect id="backdrop__skyline" y="40" width="60" height="220" fill="#141414"/>
+<rect id="backdrop__skyline_2" x="50" y="90" width="45" height="170" fill="#141414"/>
+<rect id="backdrop__skyline_3" x="310" y="60" width="65" height="200" fill="#141414"/>
+<rect id="backdrop__skyline_4" x="270" y="110" width="40" height="150" fill="#141414"/>
+<path id="backdrop__speed-streak" d="M-20 690L120 600H132L-8 690H-20Z" fill="white" fill-opacity="0.8"/>
+<path id="backdrop__speed-streak_2" d="M-20 716L160 626H172L-8 716H-20Z" fill="#FF0000"/>
+<path id="backdrop__speed-streak_3" d="M-20 742L200 652H212L-8 742H-20Z" fill="#FF0000"/>
+<path id="backdrop__speed-streak_4" d="M-20 768L240 678H252L-8 768H-20Z" fill="white" fill-opacity="0.8"/>
+<path id="backdrop__speed-streak_5" d="M-20 794L280 704H292L-8 794H-20Z" fill="#FF0000"/>
+<path id="backdrop__speed-streak_6" d="M-20 820L320 730H332L-8 820H-20Z" fill="#FF0000"/>
+<path id="backdrop__speed-streak_7" d="M-20 846L360 756H372L-8 846H-20Z" fill="white" fill-opacity="0.8"/>
+<path id="backdrop__kerb" d="M200 812L222 760H244L222 812H200Z" fill="#FF0000"/>
+<path id="backdrop__kerb_2" d="M222 812L244 760H266L244 812H222Z" fill="white"/>
+<path id="backdrop__kerb_3" d="M244 812L266 760H288L266 812H244Z" fill="#FF0000"/>
+<path id="backdrop__kerb_4" d="M266 812L288 760H310L288 812H266Z" fill="white"/>
+<path id="backdrop__kerb_5" d="M288 812L310 760H332L310 812H288Z" fill="#FF0000"/>
+<path id="backdrop__kerb_6" d="M310 812L332 760H354L332 812H310Z" fill="white"/>
+<path id="backdrop__kerb_7" d="M332 812L354 760H376L354 812H332Z" fill="#FF0000"/>
+<path id="backdrop__kerb_8" d="M354 812L376 760H398L376 812H354Z" fill="white"/>
+<path id="backdrop__kerb_9" d="M376 812L398 760H420L398 812H376Z" fill="#FF0000"/>
+<path id="backdrop__kerb_10" d="M398 812L420 760H442L420 812H398Z" fill="white"/>
+<path id="backdrop__lightning" d="M330 300L300 360H318L296 420L352 340H332L356 300H330Z" fill="#FF0000" fill-opacity="0.9"/>
+</g>
+<defs>
+<linearGradient id="paint0_linear_0_103" x1="187.5" y1="0" x2="187.5" y2="260" gradientUnits="userSpaceOnUse">
+<stop stop-color="#8A8A8A"/>
+<stop offset="1"/>
+</linearGradient>
+<clipPath id="clip0_0_103">
+<rect width="375" height="812" fill="white"/>
+</clipPath>
+</defs>
+</svg>

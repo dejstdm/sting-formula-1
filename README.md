@@ -13,7 +13,7 @@ Four concepts, each built on its own so they can be compared. They are prototype
 
 `/` is a home page listing the concepts with a screenshot and a short note on how each is built. An old link such as `/?name=MAX` still opens concept 1 and keeps the query string.
 
-Live: https://sting-formula-1.vercel.app/ (concept 4: https://sting-formula-1.vercel.app/concept-4/)
+Live: https://sting-formula-1.vercel.app/ (only `main` is deployed; concept 4 appears at https://sting-formula-1.vercel.app/concept-4/ once its branch is merged)
 
 ## Run it
 

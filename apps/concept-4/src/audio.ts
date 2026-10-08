@@ -215,14 +215,22 @@ export class GameAudio implements SceneAudio {
     this.sweep(400, 3000, t, 0.5, 0.35);
   }
 
-  car(): void {
+  /** The F1 car lands: a heavy hit, then a fast pass. */
+  drop(): void {
     if (!this.ctx) return;
     const t = this.now();
-    // A flyby: pitch swings up as it approaches, then drops away behind.
-    this.tone(120, t, 0.7, 'sawtooth', 0.28, 420);
-    this.tone(420, t + 0.7, 1.3, 'sawtooth', 0.22, 70);
-    this.sweep(300, 2500, t, 0.7, 0.5, 0.8);
-    this.sweep(2500, 200, t + 0.7, 1.2, 0.4, 0.8);
+    this.tone(90, t, 0.7, 'sine', 1, 30);
+    this.sweep(150, 3500, t, 0.35, 0.8, 0.7, 'lowpass');
+    this.tone(150, t + 0.05, 1.1, 'sawtooth', 0.26, 520);
+    this.tone(520, t + 1.0, 0.7, 'sawtooth', 0.2, 90);
+  }
+
+  /** A hard cut to the next picture. */
+  cut(): void {
+    if (!this.ctx) return;
+    const t = this.now();
+    this.tone(70, t, 0.35, 'sine', 0.8, 35);
+    this.sweep(400, 5000, t, 0.25, 0.5);
   }
 
   // ----- UI -----

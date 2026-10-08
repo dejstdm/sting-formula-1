@@ -1,5 +1,4 @@
 import type { Grade } from '../race/rules';
-import { RULES } from '../race/rules';
 import type { RaceResult } from '../race/scene';
 import type { GameAudio } from '../audio';
 
@@ -112,7 +111,7 @@ export class Screens {
   private show(cls: string, html: string): { done: Promise<string>; el: HTMLElement } {
     this.layer.className = `layer ${cls}`;
     this.layer.innerHTML = html;
-    this.placeControls(/\b(over|lights)\b/.test(cls));
+    this.placeControls(/\bover\b/.test(cls));
     const el = this.layer;
     const done = new Promise<string>((resolve) => {
       el.querySelectorAll<HTMLElement>('[data-go]').forEach((b) =>
@@ -133,126 +132,263 @@ export class Screens {
     const { done, el } = this.show(
       'screen register',
       `
-      <div class="logo"><span>STING</span><b>BOOST</b></div>
-      <p class="tag">3 BOOSTS. 1 RIVAL. 15 SECONDS.</p>
+      <p class="brandtag">GET. SET. STING.</p>
+      <h1 class="head">YOUR DETAILS</h1>
       <form class="form" onsubmit="return false">
-        <label>FIRST NAME<input name="n" maxlength="10" autocomplete="off" autocapitalize="characters" placeholder="MAX" /></label>
-        <label>EMAIL<input type="email" autocomplete="off" placeholder="you@example.com" /></label>
-        <label class="check"><input type="checkbox" checked /> I am 18 or older</label>
-        <label class="check"><input type="checkbox" checked /> I accept the rules</label>
+        <label class="field focus"><span>NAME</span><input name="n" maxlength="10" autocomplete="off" autocapitalize="characters" placeholder="Name" value="Max" /></label>
+        <label class="field"><span>EMAIL</span><input type="email" autocomplete="off" placeholder="Your email address" /></label>
+        <label class="field"><span>PROOF OF PURCHASE</span><input autocomplete="off" placeholder="Code from the pack" /></label>
+        <label class="consent"><input type="checkbox" name="ok" checked /><i></i><em>I accept the T&amp;Cs and privacy policy</em></label>
       </form>
-      <button class="cta" data-go="start"><span>START</span></button>
-      <p class="fine">Prototype. Nothing you type here is saved or sent.</p>`,
+      <div class="actions"><button class="cta" data-go="start"><span>CONTINUE</span></button></div>`,
     );
+    el.style.setProperty('--backdrop', `url(${BASE}sprites/start-backdrop.webp)`);
+    const ok = el.querySelector<HTMLInputElement>('input[name="ok"]');
+    const go = el.querySelector<HTMLButtonElement>('.cta');
+    ok?.addEventListener('change', () => go && (go.disabled = !ok.checked));
     await done;
     const name = (el.querySelector<HTMLInputElement>('input[name="n"]')?.value ?? '').trim().toUpperCase();
     this.playerName = name || 'MAX';
   }
 
-  /** "Charging": a short pause that stands in for loading. */
-  async charging(ms = 1600): Promise<void> {
-    this.show(
+  /** "Sting charging" (Figma 04): a looping energy bar; the player taps to start. */
+  async charging(): Promise<void> {
+    const { done, el } = this.show(
       'screen charging',
       `
+      <p class="brandtag">GET. SET. STING.</p>
+      <div class="glow"></div>
       <img class="can" src="${BASE}sprites/sting-can.webp" alt="" />
-      <h2>CHARGING</h2>
-      <div class="bar"><i style="animation-duration:${ms}ms"></i></div>
-      <p class="fine">Getting your Boost ready</p>`,
-    );
-    await new Promise((r) => setTimeout(r, ms));
-  }
-
-  async howToPlay(): Promise<void> {
-    const bars = RULES.strength.map((s, i) => `<li><span>BOOST ${i + 1}</span><i style="height:${s * 7 + 8}px"></i><em>${s}/10</em></li>`).join('');
-    const { done } = this.show(
-      'screen how',
-      `
-      <h2>HOW TO PLAY</h2>
-      <ol class="steps">
-        <li><b>1</b><p><strong>ENERGY DRAINS</strong>${this.playerName} slows down as the bar empties.</p></li>
-        <li><b>2</b><p><strong>WATCH THE RING</strong>It closes around the Sting button. Tap the moment it fits.</p></li>
-        <li><b>3</b><p><strong>HIT 2 OF 3</strong>Land at least two Boosts close to perfect to beat your rival.</p></li>
-      </ol>
-      <p class="sub">Every Boost is bigger than the last. Boost 3 is worth the most, but one big Boost alone will not win it.</p>
-      <ul class="power">${bars}</ul>
-      <button class="cta" data-go="ok"><span>GOT IT</span></button>`,
-    );
-    await done;
-  }
-
-  async rival(): Promise<void> {
-    const { done } = this.show(
-      'screen rival over',
-      `
-      <h2>YOUR RIVAL</h2>
-      <div class="versus">
-        <div><i class="fig me" style="background-image:url(${BASE}sprites/player-run.webp)"></i><strong>${this.playerName}</strong></div>
-        <em>VS</em>
-        <div><i class="fig rv" style="background-image:url(${BASE}sprites/rival-run.webp)"></i><strong>RIVAL</strong></div>
+      <h2 class="title"><span>STING</span><b>CHARGING</b></h2>
+      <div class="energy">
+        <div class="ebar"><i class="track"></i><div class="efill"><i></i></div></div>
+        <p class="elabel">PACK DETECTED &middot; ENERGY 0%</p>
       </div>
-      <p class="sub">15 seconds. First across the line wins.</p>
-      <button class="cta" data-go="race"><span>TO THE GRID</span></button>`,
+      <div class="actions"><button class="cta" data-go="start"><span>TAP TO START</span></button></div>`,
     );
+    el.style.setProperty('--backdrop', `url(${BASE}sprites/start-backdrop.webp)`);
+    const label = el.querySelector<HTMLElement>('.elabel')!;
+    let n = 0;
+    const timer = window.setInterval(() => {
+      n = (n + 1) % 10;
+      label.innerHTML = `PACK DETECTED &middot; ENERGY ${n * 10}%`;
+    }, 200);
     await done;
+    clearInterval(timer);
   }
 
-  /** Five red lights, then lights out. Resolves at lights out, when the race should start. */
+  /** Shared pieces of the two onboarding screens (Figma 05 and 06). */
+  private onboarding(cls: string, body: string, step: 1 | 2, button: string): { done: Promise<string>; el: HTMLElement } {
+    const dots =
+      step === 1
+        ? '<path d="M2.1 0H30.1L28 6H0Z" fill="#fff"/><path d="M38.2 0H52.2L50.1 6H36.1Z" fill="#fff" opacity=".35"/>'
+        : '<path d="M2.1 0H16.1L14 6H0Z" fill="#fff" opacity=".35"/><path d="M24.2 0H52.2L50.1 6H22.1Z" fill="#fff"/>';
+    const r = this.show(
+      `screen onb ${cls}`,
+      `
+      <p class="brandtag">GET. SET. STING.</p>
+      <button class="skip" data-go="skip">SKIP</button>
+      ${body}
+      <svg class="dots" viewBox="0 0 52.2 6" width="52.2" height="6">${dots}</svg>
+      <div class="actions"><button class="cta" data-go="next"><span>${button}</span></button></div>`,
+    );
+    r.el.style.setProperty('--backdrop', `url(${BASE}sprites/start-backdrop.webp)`);
+    return r;
+  }
+
+  /** Figma 05: the Boost button with its closing ring. Resolves 'next' or 'skip'. */
+  async howToPlay(): Promise<string> {
+    const { done } = this.onboarding(
+      'how',
+      `
+      <div class="bb"><i class="glow"></i><i class="ring"></i><i class="face"></i><i class="inner"></i><img src="${BASE}sprites/sting-can.webp" alt="" /></div>
+      <h1 class="head">HOW TO PLAY</h1>
+      <p class="copy">As your energy drops, the BOOST ZONE RING appears. Tap the Sting can at the perfect moment, when the ring surrounds the button, for maximum boost.</p>`,
+      1,
+      'CONTINUE',
+    );
+    return done;
+  }
+
+  /** Figma 06: Max against the rival, three Boosts lighting up. */
+  async rival(): Promise<string> {
+    const bolt =
+      '<svg viewBox="-0.5 -0.5 23.3 33.8" width="20.36" height="32" preserveAspectRatio="none"><path d="M14.05 .5L.95 19.41H9.68L6.77 32.5L21.32 12.14H12.59L16.95 .5H14.05Z" stroke="#000"/></svg>';
+    const runner = (who: 'max' | 'rival', name: string) => `
+      <div class="pl ${who}"><div class="run"><i class="gs"><b></b></i><span class="rc"><img src="${BASE}sprites/runner-${who}.webp" alt="" /></span></div><span class="nm">${name}</span></div>`;
+    const { done } = this.onboarding(
+      'rival',
+      `
+      ${runner('max', this.playerName)}
+      <span class="vs">VS</span>
+      ${runner('rival', 'RIVAL')}
+      <div class="bolts">${bolt}${bolt}${bolt}</div>
+      <h1 class="head">BEAT THE RIVAL</h1>
+      <p class="copy">3 boosts. 1 rival. 15 seconds. Hit the boost zone every time to cross the line first and unlock your Instant Reward.</p>`,
+      2,
+      "I'M READY",
+    );
+    return done;
+  }
+
+  /**
+   * The countdown (Figma 07a, 07b, 08): five lit columns and "GET.", three lit and "SET.",
+   * then all dark with the STING wordmark and a red flash. Resolves at lights out.
+   */
   async lights(): Promise<void> {
-    this.show('screen lights', `<div class="gantry">${'<i></i>'.repeat(5)}</div><p class="go" hidden>GO!</p>`);
-    const lamps = [...this.layer.querySelectorAll<HTMLElement>('.gantry i')];
-    await new Promise((r) => setTimeout(r, 500));
-    for (const lamp of lamps) {
-      lamp.classList.add('on');
+    const cols = Array.from({ length: 5 }, () => '<i><b></b><b></b></i>').join('');
+    const { el } = this.show(
+      'screen lights',
+      `
+      <div class="flash"></div>
+      <div class="rn rv"><i class="gs"><b></b></i><span><img src="${BASE}sprites/runner-rival-back.webp" alt="" /></span></div>
+      <div class="rn mx"><i class="gs"><b></b></i><span><img src="${BASE}sprites/runner-max-back.webp" alt="" /></span></div>
+      <div class="stl">${cols}</div>
+      <h1 class="word">GET.</h1>
+      <img class="wordmark" src="${BASE}sprites/wordmark.webp" alt="STING" hidden />`,
+    );
+    el.style.setProperty('--track', `url(${BASE}sprites/backdrop-track.webp)`);
+    const cs = [...this.layer.querySelectorAll<HTMLElement>('.stl i')];
+    const word = this.layer.querySelector<HTMLElement>('.word')!;
+    const wait = (ms: number) => new Promise((r) => setTimeout(r, ms));
+    await wait(500);
+    for (const c of cs) {
+      c.classList.add('on');
       this.audio.light();
-      await new Promise((r) => setTimeout(r, 650));
+      await wait(450);
     }
-    await new Promise((r) => setTimeout(r, 400 + Math.random() * 600));
-    lamps.forEach((l) => l.classList.remove('on'));
+    await wait(450);
+    // "SET.": the last two columns go dark.
+    cs[3].classList.remove('on');
+    cs[4].classList.remove('on');
+    word.textContent = 'SET.';
+    this.audio.light();
+    await wait(800 + Math.random() * 900);
+    // "STING": lights out. The race starts here.
+    cs[0].classList.remove('on');
+    cs[1].classList.remove('on');
+    cs[2].classList.remove('on');
+    word.hidden = true;
+    this.layer.querySelector<HTMLElement>('.wordmark')!.hidden = false;
+    this.layer.classList.add('out');
     this.audio.go();
-    this.layer.querySelector<HTMLElement>('.go')!.hidden = false;
-    setTimeout(() => this.clear(), 700);
+    setTimeout(() => this.clear(), 900);
   }
 
-  async result(r: RaceResult, extra = ''): Promise<'again' | 'prize'> {
+  /** Shared frame of the result screens (Figma 18 to 21): the Figma backdrop and brand tag. */
+  private flow(cls: string, body: string): { done: Promise<string>; el: HTMLElement } {
+    const r = this.show(`screen flow ${cls}`, `<p class="brandtag">GET. SET. STING.</p>${body}`);
+    r.el.style.setProperty('--backdrop', `url(${BASE}sprites/start-backdrop.webp)`);
+    return r;
+  }
+
+  private button(go: string, label: string, kind: 'primary' | 'secondary', top: number): string {
+    return `<button class="cta ${kind}" data-go="${go}" style="top:${top}px"><span>${label}</span></button>`;
+  }
+
+  /** Figma 18 (win) and 19 (lose). Resolves 'card' or 'again'. */
+  async result(r: RaceResult, extra = ''): Promise<'again' | 'card'> {
     const hit = (g: Grade) => g === 'perfect' || g === 'good';
-    const bolts = r.grades
-      .map((g, i) => `<li class="${hit(g) ? 'hit' : 'miss'}"><svg viewBox="0 0 20 28"><path d="M12 0L0 16h8l-2 12L20 11h-8z"/></svg><span>BOOST ${i + 1}</span><em>${GRADE_LABEL[g]}</em></li>`)
-      .join('');
-    let tip = '';
-    if (!r.won) {
-      const only3 = r.hits === 1 && hit(r.grades[2]);
-      tip = only3
-        ? 'One big Boost is not enough. Land at least 2 of the 3.'
-        : r.hits === 1
-          ? 'One more close to perfect and you win. Tap as the ring closes on the button.'
-          : 'Watch the ring and tap the moment it fits the button.';
-    }
     if (r.won) this.audio.win();
     else this.audio.lose();
-    const { done } = this.show(
-      `screen result over ${r.won ? 'won' : 'lost'}`,
-      `
-      <h1>${r.won ? 'YOU WIN' : 'SO CLOSE'}</h1>
-      <p class="sub">${r.won ? `${this.playerName} takes the flag!` : 'Your rival takes the flag.'}</p>
-      <ul class="results">${bolts}</ul>
-      <p class="score"><span>${r.hits}/3</span> BOOSTS HIT · <span>${r.power}%</span> POWER</p>
-      ${tip ? `<p class="tip">${tip}</p>` : ''}
-      ${r.won ? '<button class="cta" data-go="prize"><span>CLAIM PRIZE</span></button>' : ''}
-      <button class="cta ${r.won ? 'ghost' : ''}" data-go="again"><span>${r.won ? 'PLAY AGAIN' : 'TRY AGAIN'}</span></button>
-      ${extra ? `<p class="dbg">${extra}</p>` : ''}`,
-    );
-    return (await done) as 'again' | 'prize';
+    const dbg = extra ? `<p class="dbg">${extra}</p>` : '';
+    let done: Promise<string>;
+    if (r.won) {
+      ({ done } = this.flow(
+        'win',
+        `
+        <i class="rglow"></i>
+        <h1 class="rhead" style="top:548.16px;font-size:54px">${this.playerName} WINS</h1>
+        <p class="rsub" style="top:615.15px">${r.perfects}/3 PERFECT BOOSTS</p>
+        ${dbg}
+        ${this.button('card', 'SEE MY CARD', 'primary', 710)}`,
+      ));
+    } else {
+      const bolt = (on: boolean) =>
+        `<svg viewBox="-0.5 -0.5 20.1 31" width="19.09" height="30" preserveAspectRatio="none"><path d="M12.4 0L.8 17.3h7.7L5.9 29l12.8-18.3H11L14.9 0z" fill="${on ? '#f00' : 'rgba(255,255,255,.35)'}" stroke="#000"/></svg>`;
+      const only3 = r.hits === 1 && hit(r.grades[2]);
+      const copy =
+        r.hits === 1 && !only3
+          ? 'So close – just 0.3 sec behind. One more boost and the win is yours.'
+          : only3
+            ? 'One big Boost is not enough. Land at least 2 of the 3.'
+            : 'Watch the ring and tap the moment it fits the button.';
+      ({ done } = this.flow(
+        'lose',
+        `
+        <h1 class="rhead" style="top:422.8px;font-size:50px">RIVAL WINS</h1>
+        <p class="rcopy">${copy}</p>
+        <div class="rbolts">${r.grades.map((g) => bolt(hit(g))).join('')}</div>
+        ${dbg}
+        ${this.button('again', 'BOOST AGAIN', 'primary', 640)}
+        ${this.button('card', 'SEE MY CARD', 'secondary', 710)}`,
+      ));
+    }
+    return (await done) as 'again' | 'card';
   }
 
-  async prize(): Promise<void> {
-    const { done } = this.show(
-      'screen prize over',
+  /** Figma 20: the score card. Resolves 'redeem', 'again' or 'share'. */
+  async card(r: RaceResult): Promise<'redeem' | 'again'> {
+    const hit = (g: Grade) => g === 'perfect' || g === 'good';
+    const rows = r.grades
+      .map((g, i) => {
+        const ok = hit(g);
+        const icon = ok
+          ? '<svg viewBox="-0.5 -0.5 14.4 19.8" width="11.5" height="18"><path d="M8.8 0L.8 11.4h5.3L4.3 18.5l8.2-12H7.2z" fill="#fff" stroke="#000"/></svg>'
+          : '<svg viewBox="-0.5 -0.5 14.4 19.8" width="11.5" height="18"><path d="M8.8 0L.8 11.4h5.3L4.3 18.5l8.2-12H7.2z" fill="none" stroke="#fff" stroke-width="1.5"/></svg>';
+        return `<li class="${ok ? '' : 'missed'}">${icon}<span>BOOST ${i + 1} — ${GRADE_LABEL[g]}</span></li>`;
+      })
+      .join('');
+    const streak = [-44, 26, 96, 166, 236]
+      .map((x) => `<svg class="streak" style="left:${x}px" viewBox="0 0 150 410" width="150" height="410"><path d="M120 0H150L30 410H0L120 0Z" fill="#ae2129" fill-opacity=".55"/></svg>`)
+      .join('');
+    const { done } = this.flow(
+      'card',
       `
-      <h2>YOUR PRIZE</h2>
-      <img class="can big" src="${BASE}sprites/sting-can.webp" alt="" />
-      <p class="sub">In the live campaign the prize and its claim code appear here.</p>
-      <p class="fine">Prototype screen. No prize is issued and nothing is stored.</p>
-      <button class="cta" data-go="again"><span>PLAY AGAIN</span></button>`,
+      <div class="scard">
+        ${streak}
+        <i class="kerb"></i>
+        <span class="tag">GET. SET. STING.</span>
+        <svg class="bolt" viewBox="-0.5 -0.5 36 53.8" width="35.02" height="52.79"><path d="M21 0L1.4 28.3h13L10.1 51.8 33.6 17.9H20.5L27 0z" fill="#fff" stroke="#000"/></svg>
+        <h2 class="ttl">${r.won ? `${this.playerName},<br>YOU'RE ON<br>FIRE!` : `${this.playerName},<br>ALMOST<br>THERE!`}</h2>
+        <ul class="rows">${rows}</ul>
+      </div>
+      ${r.won ? this.button('redeem', 'REDEEM', 'primary', 570) : ''}
+      ${this.button('again', 'BOOST AGAIN', r.won ? 'secondary' : 'primary', r.won ? 640 : 570)}
+      ${this.button('share', 'SHARE MY SCORE', 'secondary', r.won ? 710 : 640)}`,
+    );
+    const share = this.layer.querySelector<HTMLElement>('[data-go="share"]');
+    share?.addEventListener('click', () => {
+      const text = `${r.hits}/3 Boosts in STING BOOST. Beat me.`;
+      if (navigator.share) void navigator.share({ title: 'STING BOOST', text, url: location.href }).catch(() => {});
+      else void navigator.clipboard?.writeText(`${text} ${location.href}`).catch(() => {});
+    });
+    let next = await done;
+    while (next === 'share') {
+      next = await new Promise<string>((res) => {
+        this.layer.querySelectorAll<HTMLElement>('[data-go]').forEach((b) => b.addEventListener('click', () => res(b.dataset.go!), { once: true }));
+      });
+    }
+    return next as 'redeem' | 'again';
+  }
+
+  /** Figma 21: the instant reward coupon. Visual only: the code is a sample and nothing is issued. */
+  async reward(): Promise<void> {
+    const { done } = this.flow(
+      'reward',
+      `
+      <p class="eyebrow">INSTANT REWARD</p>
+      <h1 class="rhead" style="top:126px;font-size:44px;line-height:.92">YOU WON<br>A FREE STING</h1>
+      <div class="coupon">
+        <div class="cbody">
+          <img src="${BASE}sprites/sting-can.webp" alt="" />
+          <div class="cinfo"><b>FREE STING</b><p>1 can / bottle at participating stores</p><i class="qr"><span>QR</span></i></div>
+        </div>
+        <div class="cfoot">STNG-7F3K-29 · VALID 14 DAYS</div>
+      </div>
+      <div class="badge"><svg viewBox="-0.5 -0.5 13.1 17.8" width="10.18" height="16"><path d="M7.4 0L.7 9.6h4.4L3.6 16.3 11.4 6.2H6.9L9.1 0z" fill="#f00" stroke="#000"/></svg><span>+1 GRAND PRIZE ENTRY</span></div>
+      ${this.button('again', 'SAVE TO WALLET', 'primary', 640)}
+      ${this.button('again', 'BOOST AGAIN', 'secondary', 710)}`,
     );
     await done;
   }

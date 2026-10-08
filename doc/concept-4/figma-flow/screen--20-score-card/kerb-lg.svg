@@ -1,0 +1,24 @@
+<svg preserveAspectRatio="none" overflow="visible" style="display: block;" width="336" height="16" viewBox="0 0 336 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="kerb--lg">
+<path id="kerb__stripe" d="M16 0H32L16 16H0L16 0Z" fill="#FF0000"/>
+<path id="kerb__stripe_2" d="M32 0H48L32 16H16L32 0Z" fill="white"/>
+<path id="kerb__stripe_3" d="M48 0H64L48 16H32L48 0Z" fill="#FF0000"/>
+<path id="kerb__stripe_4" d="M64 0H80L64 16H48L64 0Z" fill="white"/>
+<path id="kerb__stripe_5" d="M80 0H96L80 16H64L80 0Z" fill="#FF0000"/>
+<path id="kerb__stripe_6" d="M96 0H112L96 16H80L96 0Z" fill="white"/>
+<path id="kerb__stripe_7" d="M112 0H128L112 16H96L112 0Z" fill="#FF0000"/>
+<path id="kerb__stripe_8" d="M128 0H144L128 16H112L128 0Z" fill="white"/>
+<path id="kerb__stripe_9" d="M144 0H160L144 16H128L144 0Z" fill="#FF0000"/>
+<path id="kerb__stripe_10" d="M160 0H176L160 16H144L160 0Z" fill="white"/>
+<path id="kerb__stripe_11" d="M176 0H192L176 16H160L176 0Z" fill="#FF0000"/>
+<path id="kerb__stripe_12" d="M192 0H208L192 16H176L192 0Z" fill="white"/>
+<path id="kerb__stripe_13" d="M208 0H224L208 16H192L208 0Z" fill="#FF0000"/>
+<path id="kerb__stripe_14" d="M224 0H240L224 16H208L224 0Z" fill="white"/>
+<path id="kerb__stripe_15" d="M240 0H256L240 16H224L240 0Z" fill="#FF0000"/>
+<path id="kerb__stripe_16" d="M256 0H272L256 16H240L256 0Z" fill="white"/>
+<path id="kerb__stripe_17" d="M272 0H288L272 16H256L272 0Z" fill="#FF0000"/>
+<path id="kerb__stripe_18" d="M288 0H304L288 16H272L288 0Z" fill="white"/>
+<path id="kerb__stripe_19" d="M304 0H320L304 16H288L304 0Z" fill="#FF0000"/>
+<path id="kerb__stripe_20" d="M320 0H336L320 16H304L320 0Z" fill="white"/>
+</g>
+</svg>

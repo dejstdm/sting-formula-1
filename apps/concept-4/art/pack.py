@@ -3,7 +3,7 @@
 - Run cycles: gen/<who>-run-sheet.png is a 2x2 sheet on chroma green. Each
   cell is keyed to alpha, despilled, aligned on the head (x) and the feet (y),
   scaled to FRAME_H and packed into one 4x1 strip per runner.
-- The F1 car: gen/f1-car-rear.png keyed and trimmed to a 640 px wide sprite.
+- The finish pictures: doc/concept-4/figma-finish/raw/ (the designer's Figma images), resized to 750 px wide.
 - Figma art (figma/): the track backdrop and the Sting can, re-encoded as WebP.
 
 Usage: python3 pack.py
@@ -76,16 +76,38 @@ def run_strip(who):
     print(f'  frame {fw}x{fh}, feet {round(PAD * scale)}px above the frame bottom')
 
 
-def car():
-    """The Sting F1 car from behind (gen/f1-car-rear.png): keyed, trimmed, 640 px wide."""
-    rgba = key_green(Image.open(GEN / 'f1-car-rear.png'))
-    rgba = rgba.crop(bbox(rgba))
-    scale = 640 / rgba.width
-    save(rgba.resize((640, round(rgba.height * scale)), Image.LANCZOS), 'f1-car-rear', quality=88)
+def finish():
+    """The three F1 finish pictures from Figma screens 15 to 17, resized to 750 px wide."""
+    raw = HERE.parent.parent.parent / 'doc' / 'concept-4' / 'figma-finish' / 'raw'
+    for src, name in (('s15-1', 'finish-drop-in'), ('s16-1', 'finish-head-on'), ('s17-1', 'finish-crossing')):
+        im = Image.open(raw / f'{src}.png').convert('RGB')
+        save(im.resize((750, round(im.height * 750 / im.width)), Image.LANCZOS), name, quality=80)
+
+
+def start_backdrop():
+    """The registration screen backdrop from Figma screen 03 (750 px wide)."""
+    src = HERE.parent.parent.parent / 'doc' / 'concept-4' / 'figma-start' / 'raw_image_1.png'
+    im = Image.open(src).convert('RGB')
+    save(im.resize((750, round(im.height * 750 / im.width)), Image.LANCZOS), 'start-backdrop', quality=80)
+
+
+def flow_art():
+    """Runners and the STING wordmark from the Figma flow screens (doc/concept-4/figma-flow)."""
+    d = HERE.parent.parent.parent / 'doc' / 'concept-4' / 'figma-flow'
+    for who in ('max', 'rival'):
+        im = Image.open(d / '06-beat-the-rival' / f'runner-{who}-image.png').convert('RGBA')
+        save(im.resize((420, round(im.height * 420 / im.width)), Image.LANCZOS), f'runner-{who}', quality=88)
+    for who in ('max', 'rival'):  # the countdown screens (07, 08) use the back view
+        im = Image.open(d / '07a-lights-on-get' / f'runner-{who}-image.png').convert('RGBA')
+        save(im.resize((627, im.height), Image.LANCZOS), f'runner-{who}-back', quality=88)
+    wm = Image.open(d / '08-lights-out' / 'wordmark.png').convert('RGBA')
+    save(wm.resize((1070, round(wm.height * 1070 / wm.width)), Image.LANCZOS), 'wordmark', quality=88)
 
 
 def main():
-    car()
+    flow_art()
+    start_backdrop()
+    finish()
     for who in ('player', 'rival'):
         run_strip(who)
     save(Image.open(FIGMA / 'backdrop-track.png').convert('RGB'), 'backdrop-track', quality=84)

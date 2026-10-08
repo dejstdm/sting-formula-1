@@ -2,6 +2,9 @@ import { httpRouter } from 'convex/server';
 import { httpAction } from './_generated/server';
 import { internal } from './_generated/api';
 
+// Convex runs this file on its own server; only process.env is used, so no Node types are needed.
+declare const process: { env: Record<string, string | undefined> };
+
 /**
  * Two endpoints for the device test:
  *

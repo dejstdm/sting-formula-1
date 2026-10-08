@@ -3,6 +3,7 @@ import { Application, Assets, Container, type Texture } from 'pixi.js';
 import { GameAudio } from './audio';
 import { deviceConsole, reportLine } from './debug/console';
 import { Telemetry } from './debug/telemetry';
+import type { FinishTextures } from './race/finish';
 import { RaceScene, type RaceResult, type SceneOptions, type SceneTextures } from './race/scene';
 import { Screens } from './ui/screens';
 
@@ -16,11 +17,35 @@ const DESIGN_H = 812;
 const PIXEL_BUDGET = Number(params.get('px')) || 2_000_000;
 const MAX_RESOLUTION = Number(params.get('res')) || 2;
 
+/** On wide screens the game is a phone-shaped column: clip the picture to it and frame it. */
+function fitStage(l: ReturnType<typeof layout>): void {
+  const wide = l.vw / l.vh > 0.62;
+  document.body.classList.toggle('wide', wide);
+  document.body.classList.toggle('room', wide && l.vw - l.width * l.scale > 760);
+  const st = document.documentElement.style;
+  const r = Math.round(26 * l.scale);
+  st.setProperty('--col-x', `${l.x}px`);
+  st.setProperty('--col-w', `${l.width * l.scale}px`);
+  st.setProperty('--col-y', `${wide ? l.y : 0}px`);
+  st.setProperty('--col-h', `${wide ? l.height * l.scale : l.vh}px`);
+  st.setProperty('--col-r', wide ? `${r}px` : '0px');
+  st.setProperty('--col-r2', wide ? `${r}px` : '0px');
+  let f = document.getElementById('stage-frame');
+  if (!f) {
+    f = document.createElement('div');
+    f.id = 'stage-frame';
+    f.innerHTML = '<b>GET. SET. STING.</b><i>STING BOOST &middot; 3 BOOSTS &middot; 1 RIVAL &middot; 15 SECONDS</i>';
+    document.body.appendChild(f);
+  }
+}
+
 function url(file: string): string {
   return `${import.meta.env.BASE_URL}${file}`;
 }
 
 /** Fit a phone-shaped design space into the window. Wide windows get a centred column. */
+const BOX_FILL = 0.88; // on desktop the game box fills this share of the window height
+
 function layout() {
   const vw = window.innerWidth;
   const vh = window.innerHeight;
@@ -28,7 +53,7 @@ function layout() {
   let height: number;
   if (vw / vh > 0.62) {
     height = DESIGN_H;
-    scale = vh / DESIGN_H;
+    scale = (vh * BOX_FILL) / DESIGN_H;
   } else {
     scale = vw / DESIGN_W;
     height = Math.max(600, vh / scale);
@@ -52,15 +77,21 @@ function resolutionFor(vw: number, vh: number): number {
   return Math.max(1, Math.min(dpr, Math.sqrt(PIXEL_BUDGET / (vw * vh))));
 }
 
+/** The three F1 finish pictures. Loaded after the race is playable: only a win needs them. */
+function loadFinishArt(): Promise<FinishTextures | undefined> {
+  return Promise.all(['finish-drop-in', 'finish-head-on', 'finish-crossing'].map((n) => Assets.load<Texture>(url(`sprites/${n}.webp`))))
+    .then(([dropIn, headOn, crossing]) => ({ dropIn, headOn, crossing }))
+    .catch(() => undefined);
+}
+
 async function loadTextures(): Promise<SceneTextures> {
   const svg = (file: string, resolution = 3) => ({ src: url(`sprites/${file}`), data: { resolution } });
   const load = (src: string | { src: string; data: { resolution: number } }) => Assets.load<Texture>(src);
-  const car = await Assets.load<Texture>(url('sprites/f1-car-rear.webp')).catch(() => undefined);
   const [backdrop, playerRun, rivalRun, can, face, innerRing, activeGlow, activeRing, perfectGlow, perfectRing, flash, empty, perfect, missed] =
     await Promise.all([
       load(url('sprites/backdrop-track.webp')),
-      load(url('sprites/player-run.webp')),
-      load(url('sprites/rival-run.webp')),
+      load(url('sprites/runner-max-back.webp')),
+      load(url('sprites/runner-rival-back.webp')),
       load(url('sprites/sting-can.webp')),
       load(svg('boost-face.svg')),
       load(svg('boost-inner-ring.svg')),
@@ -74,7 +105,6 @@ async function loadTextures(): Promise<SceneTextures> {
       load(svg('bolt-missed.svg')),
     ]);
   return {
-    car,
     backdrop,
     playerRun,
     rivalRun,
@@ -109,6 +139,7 @@ async function main() {
 
   const [textures] = await Promise.all([loadTextures(), document.fonts.load('22px Molot')]);
 
+  let finishArt: FinishTextures | undefined;
   const audio = new GameAudio();
   const screens = new Screens(document.body, audio);
   const telemetry = DEBUG ? new Telemetry(app, params) : null;
@@ -143,6 +174,7 @@ async function main() {
     app.renderer.resize(l.vw, l.vh);
     root.scale.set(l.scale);
     root.position.set(l.x, l.y);
+    fitStage(l);
     // Never rebuild in the middle of a race: it would restart it. Just refit the picture.
     if (racing && scene) return;
     scene?.destroy({ children: true });
@@ -156,9 +188,19 @@ async function main() {
     scene = new RaceScene(app.renderer, textures, opts);
     root.addChild(scene);
     scene.warmUp(app.renderer);
+    if (finishArt) scene.setFinishArt(finishArt, app.renderer);
     screens.place({ x: l.x, y: l.y, scale: l.scale, width: l.width, height: l.height, safeTop: l.safeTop, safeBottom: l.safeBottom }, scene.topInset);
   };
   build();
+  // Start fetching the finish pictures only once the first frame is up.
+  requestAnimationFrame(() =>
+    requestAnimationFrame(() =>
+      void loadFinishArt().then((art) => {
+        finishArt = art;
+        if (art && scene) scene.setFinishArt(art, app.renderer);
+      }),
+    ),
+  );
 
   let resizeTimer = 0;
   window.addEventListener('resize', () => {
@@ -220,17 +262,16 @@ async function main() {
       await screens.register();
       build(); // picks up the first name
       await screens.charging();
-      await screens.howToPlay();
-      await screens.rival();
+      if ((await screens.howToPlay()) !== 'skip') await screens.rival();
     }
     for (;;) {
       screens.clear();
       const result = await playRace(params.get('play'), true);
       const extra = telemetry ? reportLine(telemetry, telemetry.history[0] ?? null) : '';
-      let next = await screens.result(result, extra);
-      if (next === 'prize') {
-        await screens.prize();
-        next = 'again';
+      const next = await screens.result(result, extra);
+      if (next === 'card') {
+        const after = await screens.card(result);
+        if (after === 'redeem') await screens.reward();
       }
       scene!.rearm();
     }

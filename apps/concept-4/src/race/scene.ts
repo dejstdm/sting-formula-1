@@ -1,5 +1,6 @@
 import { Container, Sprite, Texture, type Renderer } from 'pixi.js';
 import { BoostButton, type BoostButtonTextures } from './boostButton';
+import { Finish, FINISH, type FinishTextures } from './finish';
 import { Banner, Flash, Sparks, SpeedLines } from './fx';
 import { boostPower, gradeTap, isHit, outcomeOf, RULES, type Grade, type Outcome } from './rules';
 import { HudBottom, HudTop, type HudTextures } from './hud';
@@ -30,8 +31,8 @@ export interface SceneTextures extends BoostButtonTextures, HudTextures {
   playerRun: Texture;
   rivalRun: Texture;
   flash: Texture;
-  /** The Sting F1 car from behind, for the finish sequence. Optional. */
-  car?: Texture;
+  /** The three F1 illustrations of the finish. Optional: without them the win just ends. */
+  finish?: FinishTextures;
 }
 
 export interface SceneOptions {
@@ -59,7 +60,10 @@ export interface RaceResult extends Outcome {
 export interface SceneAudio {
   boost(index: number, grade: Grade, power: number): void;
   finishLine(won: boolean): void;
-  car(): void;
+  /** The F1 car drops in (first cut of the finish). */
+  drop(): void;
+  /** Any later hard cut. */
+  cut(): void;
   /** Called every frame: how fast they run (0 to 1.3) and the energy (0 to 1). */
   drive(speed: number, energy: number): void;
 }
@@ -104,7 +108,7 @@ export class RaceScene extends Container {
   private player: Runner;
   private rival: Runner;
   private runners = new Container();
-  private car: Sprite | null = null;
+  private finish: Finish;
   private flash: Flash;
   private lines: SpeedLines;
   private hudTop: HudTop;
@@ -126,7 +130,6 @@ export class RaceScene extends Container {
   private grades: Grade[] = [];
   private result: RaceResult | null = null;
   private crossed = false;
-  private carSounded = false;
   private laps = 0;
   /** Speed multiplier once the line is crossed: they coast to a stop. */
   private coast = 1;
@@ -156,23 +159,16 @@ export class RaceScene extends Container {
     fade.width = W;
     fade.height = 342;
 
-    this.player = new Runner(t.playerRun, 0);
-    this.rival = new Runner(t.rivalRun, 1.6);
+    this.player = new Runner(t.playerRun, 'max', 0);
+    this.rival = new Runner(t.rivalRun, 'rival', 0.4);
     this.runners.sortableChildren = true;
     this.runners.addChild(this.rival, this.player);
-    if (t.car) {
-      this.car = new Sprite(t.car);
-      this.car.anchor.set(0.5, 0.96);
-      this.car.visible = false;
-      this.runners.addChild(this.car);
-    }
-
     // Zoom kicks scale the world about the vanishing point.
     this.world.pivot.set(this.vp.x, this.vp.y);
     this.world.position.set(this.vp.x, this.vp.y);
     this.world.addChild(this.road, this.flash, this.lines, fade, this.runners);
 
-    this.hudTop = new HudTop(W, o.safeTop, o.playerName);
+    this.hudTop = new HudTop(W, Math.max(o.safeTop, 32), o.playerName);
     this.hudBottom = new HudBottom(W, H - Math.max(0, o.safeBottom - 12), t);
     this.button = new BoostButton(t);
     this.button.position.set(W / 2, H - Math.max(0, o.safeBottom - 12) - 110);
@@ -180,10 +176,24 @@ export class RaceScene extends Container {
     this.sparks.position.copyFrom(this.button.position);
     this.banner.position.set(W / 2, this.hudTop.height_ + 80);
 
-    this.addChild(this.world, this.hudTop, this.banner, this.hudBottom, this.button, this.sparks);
+    this.finish = new Finish(t.finish ?? null, W, H, renderer);
+
+    this.addChild(this.world, this.finish, this.hudTop, this.banner, this.hudBottom, this.button, this.sparks);
     this.reset();
     // Looping runs (tests, screenshots) start at once; the game waits for start().
     if (o.loop) this.state = 'racing';
+  }
+
+  /** Hands over the finish pictures once they have loaded, and uploads them to the GPU off the race's critical path. */
+  setFinishArt(art: FinishTextures, renderer: Renderer): void {
+    this.finish.setTextures(art);
+    const upload = () => {
+      if (this.state === 'racing' && !this.o.loop) return; // not during a real race
+      this.finish.warm();
+      renderer.render({ container: this });
+      this.finish.unwarm();
+    };
+    (window.requestIdleCallback ?? ((f: () => void) => setTimeout(f, 200)))(upload);
   }
 
   /** Height of the top HUD in stage units, so buttons can sit just under it. */
@@ -200,7 +210,7 @@ export class RaceScene extends Container {
     this.flash.warm();
     this.banner.showAll();
     this.sparks.burst(2);
-    if (this.car) this.car.visible = true;
+    this.finish.warm();
     this.button.setState('active');
     renderer.render({ container: this });
     this.button.setState('perfect');
@@ -208,7 +218,7 @@ export class RaceScene extends Container {
     this.lines.visible = false;
     this.flash.hide();
     this.banner.visible = false;
-    if (this.car) this.car.visible = false;
+    this.finish.unwarm();
     this.sparks.update(10);
     this.button.setState('default');
   }
@@ -223,10 +233,10 @@ export class RaceScene extends Container {
     this.grades = [];
     this.result = null;
     this.crossed = false;
-    this.carSounded = false;
     this.coast = 1;
     this.kick = this.shake = this.streaks = 0;
-    if (this.car) this.car.visible = false;
+    this.finish.reset();
+    this.world.visible = this.hudBottom.visible = this.button.visible = true;
     for (let i = 0; i < 3; i++) this.hudBottom.setBolt(i, 'empty');
     this.button.setState('default');
   }
@@ -298,7 +308,9 @@ export class RaceScene extends Container {
     }
 
     this.time += dt;
-    if (this.time >= RULES.raceSeconds) {
+    const won = this.result?.won ?? false;
+    const sequence = won && this.hasFinishArt;
+    if (this.time >= RULES.finishAt + (sequence ? FINISH.end : won ? 1.5 : FINISH.endLose)) {
       this.o.onLap?.(++this.laps);
       if (this.o.loop) {
         this.reset();
@@ -326,7 +338,8 @@ export class RaceScene extends Container {
       if (this.boostDone && t > close + 1.2) {
         this.boost++;
         this.boostDone = false;
-        this.button.setState('default');
+        // After the last Boost the button greys out (Figma screen 14: 45%).
+        this.button.setState(this.boost >= RULES.ringCloses.length ? 'disabled' : 'default');
       }
     }
 
@@ -345,14 +358,16 @@ export class RaceScene extends Container {
       vPlayer += Math.max(-1.5, Math.min(3, (projected - target) / remaining));
     }
 
-    // The line, then the F1 car, then everything coasts to a stop.
+    // The line. A win hands over to the F1 finish (race/finish.ts); a loss just dims.
     if (t >= RULES.finishAt && !this.crossed) {
       this.crossed = true;
-      this.flash.fire();
-      this.kick = 1;
-      this.streaks = 1.2;
-      this.banner.show('finish', FINISH_SUB);
-      this.o.audio?.finishLine(this.result?.won ?? false);
+      if (!sequence) {
+        this.flash.fire();
+        this.kick = 1;
+        this.streaks = 1.2;
+        this.banner.show('finish', FINISH_SUB);
+        this.o.audio?.finishLine(won);
+      }
     }
     this.coast = this.crossed ? Math.max(0, 1 - (t - RULES.finishAt - 0.4) / 1.3) : 1;
     const dPlayer = vPlayer * this.coast * dt;
@@ -362,12 +377,14 @@ export class RaceScene extends Container {
     this.road.advance(dPlayer);
 
     this.placeRunners(dPlayer, dRival);
-    this.driveCar(t);
+    this.runFinish(t, dt, won, sequence);
     this.applyEffects(dt);
 
     this.o.audio?.drive(this.coast * (vPlayer / PACE.rivalSpeed), this.energy);
     const length = PACE.rivalSpeed * RULES.finishAt;
-    this.hudTop.update(Math.min(t, RULES.finishAt), this.playerDist / length, this.rivalDist / length);
+    // Figma screens 16 and 17 show 0:15 on the clock, screens 14 and 15 show 0:13.
+    const clock = this.finish.picture >= 1 ? 15 : Math.min(t, RULES.finishAt);
+    this.hudTop.update(clock, Math.min(1, this.playerDist / length), Math.min(1, this.rivalDist / length));
     this.hudBottom.setEnergy(this.shownEnergy);
   }
 
@@ -382,30 +399,28 @@ export class RaceScene extends Container {
     this.rival.zIndex = r.y;
   }
 
-  /** The F1 car comes from behind the camera, whips past both runners and shrinks into the gate. */
-  private driveCar(t: number): void {
-    const car = this.car;
-    if (!car) return;
-    const u = (t - RULES.finishAt) / (RULES.raceSeconds - RULES.finishAt);
-    if (u < 0.04 || u > 1) {
-      car.visible = false;
-      return;
+  private get hasFinishArt(): boolean {
+    return this.finish.hasArt;
+  }
+
+  /** After the line: the win cuts to the F1 pictures, a loss dims the race. */
+  private runFinish(t: number, dt: number, won: boolean, sequence: boolean): void {
+    if (!this.crossed) return;
+    const s = t - RULES.finishAt;
+    if (won && !sequence) return;
+    const covered = this.finish.update(s, dt, won);
+    if (!sequence) return;
+    // The pictures replace the race: no runners, no road, no bottom HUD, no feedback banner.
+    this.world.visible = this.hudBottom.visible = this.button.visible = !this.finish.covering;
+    this.banner.visible = false;
+    this.sparks.visible = !this.finish.covering;
+    this.finish.position.set((Math.random() - 0.5) * 20 * this.finish.shake, (Math.random() - 0.5) * 20 * this.finish.shake);
+    if (covered) {
+      if (this.finish.picture === 0) {
+        this.o.audio?.drop();
+        this.o.audio?.finishLine(true);
+      } else this.o.audio?.cut();
     }
-    const z = -0.95 + 90 * Math.pow(u, 2.5);
-    const at = placeOnGround(this.fit, z, 0);
-    const below = at.height / RUNNERS.heightRatio;
-    const w = Math.min(below * 1.05, 1400);
-    car.visible = true;
-    car.position.set(at.x, at.y);
-    car.width = w;
-    car.scale.y = car.scale.x;
-    car.zIndex = at.y;
-    if (!this.carSounded) {
-      this.carSounded = true;
-      this.o.audio?.car();
-    }
-    // The pass: a kick as it goes by the runners.
-    if (u > 0.13 && u < 0.2) this.shake = Math.max(this.shake, 0.8);
   }
 
   /** Camera kick and shake, speed streaks, flash, sparks and the HUD effects. */
@@ -416,8 +431,7 @@ export class RaceScene extends Container {
     this.world.scale.set(1 + 0.07 * this.kick);
     const amp = 5 * this.shake;
     this.world.position.set(this.vp.x + (Math.random() - 0.5) * amp, this.vp.y + (Math.random() - 0.5) * amp);
-    const carStreaks = this.car?.visible ? 0.55 : 0;
-    this.lines.update(dt, this.streaks + carStreaks + 0.12 * Math.max(0, this.surge - 0.2));
+    this.lines.update(dt, this.streaks + 0.12 * Math.max(0, this.surge - 0.2));
     this.flash.update(dt);
     this.sparks.update(dt);
     this.banner.update(dt);

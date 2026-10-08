@@ -1531,3 +1531,7 @@ body:not(.room) #stage-frame i {
   letter-spacing: 0.84px;
   white-space: nowrap;
 }
+
+.console .check{display:flex;gap:8px;align-items:center;font-size:13px;margin:6px 0}
+.console .warn{color:#ff6b6b;font-size:13px;margin:4px 0}
+#ui .console .check input{width:auto;margin:0}

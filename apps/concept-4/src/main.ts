@@ -149,7 +149,7 @@ async function main() {
   let scene: RaceScene | null = null;
   let racing = false;
   let finishRace: ((r: RaceResult) => void) | null = null;
-  let testMode: 'auto' | 'manual' = 'manual';
+  let testMode: 'auto' | 'manual' | 'stress' = 'manual';
 
   const opts: SceneOptions = {
     width: DESIGN_W,
@@ -193,13 +193,14 @@ async function main() {
   };
   build();
   // Start fetching the finish pictures only once the first frame is up.
+  let finishReady: Promise<void> = Promise.resolve();
   requestAnimationFrame(() =>
-    requestAnimationFrame(() =>
-      void loadFinishArt().then((art) => {
+    requestAnimationFrame(() => {
+      finishReady = loadFinishArt().then((art) => {
         finishArt = art;
         if (art && scene) scene.setFinishArt(art, app.renderer);
-      }),
-    ),
+      });
+    }),
   );
 
   let resizeTimer = 0;
@@ -210,11 +211,15 @@ async function main() {
 
   // Touch goes to the Boost button only (RaceScene). Keys cover a USB arcade button.
   const tap = () => scene?.tap();
+  window.addEventListener('pointerdown', (e) => telemetry?.noteInput(e.timeStamp), { capture: true });
   window.addEventListener('keydown', (e) => {
     if (e.code === 'Space' || e.code === 'Enter') {
       if ((e.target as HTMLElement | null)?.tagName === 'INPUT' || (e.target as HTMLElement | null)?.tagName === 'BUTTON') return;
       e.preventDefault();
-      if (!e.repeat) tap();
+      if (!e.repeat) {
+        telemetry?.noteInput(e.timeStamp);
+        tap();
+      }
     }
   });
   // Browsers only start audio after a tap, so unlock on the first one, wherever it lands.
@@ -245,7 +250,7 @@ async function main() {
     const result = await finished;
     racing = false;
     audio.stopMusic();
-    telemetry?.end(result.grades, auto && testMode === 'auto' ? null : result.won);
+    telemetry?.end(result.grades, auto && testMode !== 'manual' ? null : result.won);
     return result;
   };
 
@@ -253,8 +258,10 @@ async function main() {
     if (telemetry) {
       testMode = await deviceConsole(screens, telemetry);
       screens.clear();
-      if (testMode === 'auto') {
-        for (let i = 0; i < 3; i++) await playRace('PPP', false);
+      if (testMode !== 'manual') {
+        await finishReady; // the win finish must be in the measured race
+        // Stress: 10 races back to back, so a phone that heats up and slows down shows it.
+        for (let i = 0; i < (testMode === 'stress' ? 10 : 3); i++) await playRace('PPP', false);
         continue; // back to the console to see and send the results
       }
     }

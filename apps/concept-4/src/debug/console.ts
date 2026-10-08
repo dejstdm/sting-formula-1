@@ -4,7 +4,8 @@ import type { RaceReport, Telemetry } from './telemetry';
 const esc = (s: unknown) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]!);
 
 /** A guess at the phone from the user agent, to save typing. iPhones never say which model. */
-function guessLabel(): string {
+function guessLabel(model = ''): string {
+  if (model) return `${model}, ${navigator.userAgent.match(/Android ([\d.]+)/)?.[0] ?? navigator.platform}`;
   const ua = navigator.userAgent;
   const ios = /iPhone OS ([\d_]+)/.exec(ua);
   if (ios) return `iPhone, iOS ${ios[1].replace(/_/g, '.')}`;
@@ -15,7 +16,10 @@ function guessLabel(): string {
 
 function line(r: RaceReport): string {
   const x = r.race;
-  return `${r.mode.padEnd(6)} ${String(x.avgFps).padStart(5)} fps  p95 ${String(x.p95).padStart(5)} ms  worst ${String(x.worst).padStart(6)} ms  >34ms ${x.over34Pct}%`;
+  const warnTxt = r.interrupted ? '  INTERRUPTED' : '';
+  const tapTxt = r.input ? `  tap ${r.input.avgMs} ms` : '';
+  const fin = r.finish ? `  finish ${r.finish.avgFps} fps` : '';
+  return `${r.mode.padEnd(6)} ${String(x.avgFps).padStart(5)} fps  p95 ${String(x.p95).padStart(5)} ms  worst ${String(x.worst).padStart(6)} ms  >34ms ${x.over34Pct}%${fin}${tapTxt}${warnTxt}`;
 }
 
 /**
@@ -24,7 +28,7 @@ function line(r: RaceReport): string {
  * Boosts itself, so every phone does the same work) or plays normally. Resolves when
  * the tester picks one.
  */
-export async function deviceConsole(screens: Screens, telemetry: Telemetry): Promise<'auto' | 'manual'> {
+export async function deviceConsole(screens: Screens, telemetry: Telemetry): Promise<'auto' | 'manual' | 'stress'> {
   const info = (): string => {
     const d = telemetry.device as Record<string, unknown>;
     const s = telemetry.status;
@@ -41,13 +45,16 @@ queued ${s.pending} · sent ${s.sent}${s.lastError ? ` · error: ${esc(s.lastErr
     const recent = telemetry.history.slice(0, 5).map((r) => esc(line(r))).join('\n') || 'no results yet';
     return `
       <h2>DEVICE TEST</h2>
-      <label>PHONE NAME (model and OS)<input id="dev-label" maxlength="60" autocomplete="off" placeholder="e.g. iPhone 8, iOS 15.8" value="${esc(telemetry.label || guessLabel())}" /></label>
+      <label>PHONE NAME (model and OS)<input id="dev-label" maxlength="60" autocomplete="off" placeholder="e.g. iPhone 8, iOS 15.8" value="${esc(telemetry.label || guessLabel(String((telemetry.device as Record<string, unknown>).model ?? '')))}" /></label>
       <pre id="dev-info">${info()}</pre>
       <div class="row">
-        <button class="cta" data-go="auto"><span>AUTO TEST ×3</span></button>
-        <button class="cta ghost" data-go="manual"><span>PLAY</span></button>
+        <button class="cta" data-start="auto"><span>AUTO TEST ×3</span></button>
+        <button class="cta ghost" data-start="stress"><span>STRESS ×10</span></button>
+        <button class="cta ghost" data-start="manual"><span>PLAY</span></button>
       </div>
-      <p class="fine">Auto test: keep the screen on, do not touch it. It runs 3 races of 15 seconds. Then come back here to send the results.</p>
+      <label class="check"><input type="checkbox" id="dev-saver" /> Battery saver / low power mode is ON</label>
+      <p id="dev-warn" class="warn" hidden></p>
+      <p class="fine">Auto test: keep the screen on, do not touch it. 3 races of about 17 seconds, including the win finish. Stress: 10 races in a row (about 3 minutes) to show whether the phone slows down when it gets hot. Run the normal test with battery saver OFF first, then once more with it ON. Then come back here to send the results.</p>
       <pre>${recent}</pre>
       <div class="row">
         <button class="cta ghost" data-act="copy"><span>COPY</span></button>
@@ -82,9 +89,29 @@ queued ${s.pending} · sent ${s.sent}${s.lastError ? ` · error: ${esc(s.lastErr
       out.textContent = text;
     }
   });
-  const go = await done;
+  const saver = el.querySelector<HTMLInputElement>('#dev-saver')!;
+  const warn = el.querySelector<HTMLElement>('#dev-warn')!;
+  const updateConditions = () => (telemetry.conditions = { batterySaver: saver.checked, note: '' });
+  saver.addEventListener('change', updateConditions);
+  const start = new Promise<string>((resolve) => {
+    el.querySelectorAll<HTMLElement>('[data-start]').forEach((b) =>
+      b.addEventListener('click', () => {
+        const mode = b.dataset.start!;
+        // An unnamed phone makes the result useless, so ask for the name first (PLAY does not record a name).
+        if (mode !== 'manual' && !label.value.trim()) {
+          warn.hidden = false;
+          warn.textContent = 'Type the phone name first (model and OS), otherwise the result cannot be told apart.';
+          label.focus();
+          return;
+        }
+        resolve(mode);
+      }),
+    );
+  });
+  const go = await Promise.race([done, start]);
+  updateConditions();
   saveLabel();
-  return go as 'auto' | 'manual';
+  return go as 'auto' | 'manual' | 'stress';
 }
 
 /** One line for the result screens in debug mode. */

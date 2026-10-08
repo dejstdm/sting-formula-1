@@ -1,5 +1,5 @@
 import type { Application } from 'pixi.js';
-import type { Grade } from '../race/rules';
+import { RULES, type Grade } from '../race/rules';
 
 /**
  * Device test results for concept 4 (only active with ?debug).
@@ -11,7 +11,7 @@ import type { Grade } from '../race/rules';
  * so nothing is lost without a connection. No name, email or other personal data is in it.
  */
 
-export const REPORT_VERSION = 1;
+export const REPORT_VERSION = 2;
 const QUEUE_KEY = 'stingboost.c4.perfQueue';
 const LABEL_KEY = 'stingboost.c4.deviceLabel';
 const HISTORY_KEY = 'stingboost.c4.perfHistory';
@@ -25,7 +25,21 @@ export interface RaceReport {
   /** Id shared by all races of one test session. */
   session: string;
   /** auto = the game plays three Perfect Boosts itself (comparable between phones); manual = a person played. */
-  mode: 'auto' | 'manual';
+  mode: 'auto' | 'manual' | 'stress';
+  /** Which race of the session this is (1, 2, 3 ...): in a stress run the fps trend over this number shows heat throttling. */
+  runIndex: number;
+  /** Ticked by the tester: what the phone was doing. Battery saver can halve the frame rate. */
+  conditions: { batterySaver: boolean; note: string };
+  /** Battery level (0 to 100) at the start and the end of the race. Chromium only: null on Safari and Firefox. */
+  battery: { start: number; end: number; charging: boolean } | null;
+  /** True if the page was hidden during the race (screen locked, app switched): the numbers are not trustworthy. */
+  interrupted: boolean;
+  /** Real finger taps during the race: ms from the touch to the start of the next frame (PLAY mode only, the auto test taps by script). */
+  input: { taps: number; avgMs: number; worstMs: number } | null;
+  /** JS heap at the start of the race, to compare with race.heapMB at the end (a leak shows over a stress run). Chromium only. */
+  heapStartMB: number | null;
+  /** The win finish (after the line), measured on its own: the heaviest moment. */
+  finish: { frames: number; avgFps: number; p95: number; worst: number; over34Pct: number } | null;
   /** Typed in by the tester: the one thing a browser cannot tell us for an iPhone. */
   label: string;
   build: string;
@@ -89,8 +103,15 @@ export class Telemetry {
   onChange: (() => void) | null = null;
 
   private app: Application;
-  private mode: 'auto' | 'manual' = 'manual';
+  private mode: 'auto' | 'manual' | 'stress' = 'manual';
+  private runIndex = 0;
+  conditions = { batterySaver: false, note: '' };
+  private batteryStart: { level: number; charging: boolean } | null = null;
+  private batteryNow: { level: number; charging: boolean } | null = null;
   private recording = false;
+  private interrupted = false;
+  private tapLatencies: number[] = [];
+  private heapStartMB: number | null = null;
   private frames: number[] = [];
   private stamps: number[] = [];
   private startedAt = 0;
@@ -122,7 +143,18 @@ export class Telemetry {
     } catch {
       /* Safari and Firefox have no long-task API: the report says count 0 and the device block says so */
     }
+    document.addEventListener('visibilitychange', () => {
+      if (this.recording && document.hidden) this.interrupted = true;
+    });
     void this.collectDevice();
+  }
+
+  /** Call with the event time of every touch or key press. Measures how long the screen takes to start reacting. */
+  noteInput(eventTime: number): void {
+    if (!this.recording || this.mode !== 'manual') return;
+    requestAnimationFrame((now) => {
+      if (this.recording) this.tapLatencies.push(Math.max(0, now - eventTime));
+    });
   }
 
   setLabel(label: string): void {
@@ -135,12 +167,19 @@ export class Telemetry {
   }
 
   /** Call when the race clock starts. */
-  begin(mode: 'auto' | 'manual'): void {
+  begin(mode: 'auto' | 'manual' | 'stress'): void {
     this.mode = mode;
+    this.runIndex++;
+    this.batteryStart = this.batteryNow;
+    void this.readBattery();
     this.frames = [];
     this.stamps = [];
     this.boosts = [];
     this.longTasks = { count: 0, totalMs: 0, worstMs: 0 };
+    this.interrupted = document.hidden;
+    this.tapLatencies = [];
+    const heap = (performance as unknown as { memory?: { usedJSHeapSize: number } }).memory;
+    this.heapStartMB = heap ? r1(heap.usedJSHeapSize / 1048576) : null;
     this.startedAt = performance.now();
     this.recording = true;
   }
@@ -155,6 +194,7 @@ export class Telemetry {
     if (!this.recording) return null;
     this.recording = false;
     if (this.frames.length < 10) return null;
+    void this.readBattery();
     const report = this.build(grades, won);
     this.history = [report, ...this.history].slice(0, 30);
     writeJson(HISTORY_KEY, this.history);
@@ -191,6 +231,13 @@ export class Telemetry {
       id: uid(),
       session: this.session,
       mode: this.mode,
+      runIndex: this.runIndex,
+      conditions: { ...this.conditions },
+      battery: this.batteryStart && this.batteryNow ? { start: this.batteryStart.level, end: this.batteryNow.level, charging: this.batteryNow.charging } : null,
+      finish: this.finishStats(),
+      interrupted: this.interrupted || document.hidden,
+      input: this.tapLatencies.length ? { taps: this.tapLatencies.length, avgMs: r1(this.tapLatencies.reduce((a, b) => a + b, 0) / this.tapLatencies.length), worstMs: r1(Math.max(...this.tapLatencies)) } : null,
+      heapStartMB: this.heapStartMB,
       label: this.label,
       build: (import.meta.env.VITE_BUILD as string | undefined) ?? 'dev',
       page: location.pathname + location.search,
@@ -231,6 +278,36 @@ export class Telemetry {
         heapMB: mem ? r1(mem.usedJSHeapSize / 1048576) : null,
       },
     };
+  }
+
+  /** Frames from the moment MAX crosses the line: the F1 pictures, shake, speed lines and confetti. */
+  private finishStats(): RaceReport['finish'] {
+    const from = this.stamps.findIndex((t) => t >= RULES.finishAt * 1000);
+    if (from < 0) return null;
+    const f = this.frames.slice(from);
+    if (f.length < 10) return null;
+    const sorted = [...f].sort((a, b) => a - b);
+    const total = f.reduce((a, b) => a + b, 0);
+    return {
+      frames: f.length,
+      avgFps: r1(f.length / (total / 1000)),
+      p95: r1(percentile(sorted, 0.95)),
+      worst: r1(sorted[sorted.length - 1]),
+      over34Pct: r1((100 * f.filter((x) => x > 34).length) / f.length),
+    };
+  }
+
+  /** Battery level, where the browser offers it (Chromium). */
+  private async readBattery(): Promise<void> {
+    try {
+      const b = await (navigator as Navigator & { getBattery?: () => Promise<{ level: number; charging: boolean }> }).getBattery?.();
+      if (b) {
+        this.batteryNow = { level: Math.round(b.level * 100), charging: b.charging };
+        this.batteryStart ??= this.batteryNow;
+      }
+    } catch {
+      /* not offered */
+    }
   }
 
   private loadInfo(): Record<string, unknown> {

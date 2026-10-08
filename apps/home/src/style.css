@@ -145,6 +145,22 @@ body {
 
 .as:hover { color: var(--paper); }
 
+.testing-links {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 20px;
+  width: min(1120px, calc(100% - 32px));
+  margin: 28px auto;
+  padding: 24px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-left: 4px solid var(--red);
+  background: rgba(255, 255, 255, 0.025);
+}
+.testing-links > div { flex: 1 1 280px; }
+.testing-links h2 { margin: 0 0 6px; font: 24px var(--display); }
+.testing-links p { margin: 0; color: var(--mute); }
+
 .foot {
   margin-top: auto;
   padding: 16px 28px 22px;

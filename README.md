@@ -41,6 +41,8 @@ Each concept's README lists its own URL flags, rules, tests and structure. Commo
 
 One Vercel project: `vercel.json` runs `npm run build`, serves `dist/`, and uses trailing slashes. Environment variable for the concept 4 device test: `VITE_PERF_URL` (see the concept 4 README). The Convex functions in `convex/` are deployed separately with `npx convex deploy`.
 
+The home page links to the concept 4 debug test and `/results/`. The results page reads live measurements through the Vercel server function `/api/device-results`. Set `PERF_READ_KEY` in the Vercel project's environment variables for each environment that serves results. Keep it server-only, without a `VITE_` prefix. The collector comes from `PERF_COLLECTOR_URL`, then `VITE_PERF_URL`, with the current `lovable-kingfisher-451.eu-west-1.convex.site` deployment as the fallback. Redeploy Vercel after changing these variables. No Convex redeploy is needed for the results page. Local `npm run dev:home` also serves this endpoint, using the root `.env.local`.
+
 ## Repository layout
 
 ```

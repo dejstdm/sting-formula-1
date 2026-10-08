@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#07060a" />
+    <title>STING BOOST · device results</title>
+    <link rel="icon" type="image/png" href="/favicon.png" />
+  </head>
+  <body>
+    <header class="site">
+      <a href="/" aria-label="Back to game concepts"><img class="wordmark" src="/sting-logo.webp" alt="Sting" /></a>
+      <a class="as" href="/">← All concepts</a>
+    </header>
+    <main class="results-page">
+      <div class="results-heading"><div><p class="eyebrow">CONCEPT 4 / DEVICE TESTING</p><h1>ON THE CLOCK.</h1><p class="intro">Real races. Real devices. See how smoothly each phone runs.</p></div><a class="play" href="https://sting-formula-1-test.vercel.app/concept-4/?debug">Test your device</a></div>
+      <div class="results-toolbar">
+        <label>TEST MODE <select id="mode"><option value="all">All tests</option><option value="auto">Auto ×3</option><option value="stress">Stress ×10</option><option value="manual">Manual play</option></select></label>
+        <label>BATTERY SAVER <select id="saver"><option value="all">On and off</option><option value="off">Off</option><option value="on">On</option></select></label>
+        <button id="refresh" class="play" type="button">Refresh results</button>
+      </div>
+      <p id="load-status" role="status" aria-live="polite">Loading results…</p>
+      <div id="results" hidden>
+        <div id="totals" class="totals"></div>
+        <h2>DEVICE COMPARISON</h2>
+        <p class="table-note">One row per device, test mode, battery saver setting and build. Median values. Pass requires ≥50 fps, p95 ≤25 ms and ≤2% of frames over 34 ms.</p>
+        <div class="table-wrap" tabindex="0" role="region" aria-label="Device comparison"><table><thead><tr><th>Device</th><th>Mode / saver</th><th>Build</th><th>Runs</th><th>Avg fps</th><th>p95 ms</th><th>Slow frames</th><th>Finish fps</th><th>Result</th></tr></thead><tbody id="summary"></tbody></table></div>
+        <h2>LATEST RACES</h2>
+        <p class="table-note">Newest first. Interrupted races stay visible here, but are excluded from the comparison.</p>
+        <div class="table-wrap" tabindex="0" role="region" aria-label="Latest races"><table><thead><tr><th>Finished</th><th>Device</th><th>Mode / saver</th><th>Build</th><th>Avg fps</th><th>p95 ms</th><th>Worst ms</th><th>Finish fps</th><th>Tap ms</th><th>Status</th></tr></thead><tbody id="recent"></tbody></table></div>
+      </div>
+    </main>
+    <p class="foot">Concept 4 · performance measurements · latest 2,000 races</p>
+    <script type="module" src="/src/results.js"></script>
+  </body>
+</html>

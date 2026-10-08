@@ -52,9 +52,10 @@ queued ${s.pending} · sent ${s.sent}${s.lastError ? ` · error: ${esc(s.lastErr
         <button class="cta ghost" data-start="stress"><span>STRESS ×10</span></button>
         <button class="cta ghost" data-start="manual"><span>PLAY</span></button>
       </div>
-      <label class="check"><input type="checkbox" id="dev-saver" /> Battery saver / low power mode is ON</label>
+      <label class="check"><input type="checkbox" id="dev-saver" aria-describedby="dev-saver-help" /> Battery saver / low power mode is ON</label>
+      <p id="dev-saver-help" class="fine">This checkbox only records the phone's current setting. To turn Battery Saver / Low Power Mode on or off, use your phone's settings. First run AUTO TEST with the mode OFF and this box unchecked. Then turn the mode ON in your phone's settings, check this box, and run AUTO TEST again.</p>
       <p id="dev-warn" class="warn" hidden></p>
-      <p class="fine">Auto test: keep the screen on, do not touch it. 3 races of about 17 seconds, including the win finish. Stress: 10 races in a row (about 3 minutes) to show whether the phone slows down when it gets hot. Run the normal test with battery saver OFF first, then once more with it ON. Then come back here to send the results.</p>
+      <p class="fine">Auto test: keep the screen on, do not touch it. 3 races of about 17 seconds, including the win finish. Stress: 10 races in a row (about 3 minutes) to show whether the phone slows down when it gets hot. Come back here after testing to send the results.</p>
       <pre>${recent}</pre>
       <div class="row">
         <button class="cta ghost" data-act="copy"><span>COPY</span></button>
@@ -120,4 +121,37 @@ export function reportLine(telemetry: Telemetry, report: RaceReport | null): str
   const s = telemetry.status;
   const sent = !s.configured ? 'kept on this phone' : s.pending === 0 ? 'sent ✓' : s.lastError ? `queued (${esc(s.lastError)})` : 'sending…';
   return `${esc(line(report))}<br>${sent}`;
+}
+
+/** Retry queued reports directly from either race result screen. */
+export function resultSendControls(el: HTMLElement, telemetry: Telemetry): () => void {
+  const box = el.querySelector<HTMLElement>('.dbg')!;
+  box.innerHTML = '<div data-report></div><button class="cta secondary" data-send-results><span></span></button><p data-send-status role="status" aria-live="polite"></p>';
+  const report = box.querySelector<HTMLElement>('[data-report]')!;
+  const send = box.querySelector<HTMLButtonElement>('[data-send-results]')!;
+  const label = send.querySelector('span')!;
+  const status = box.querySelector<HTMLElement>('[data-send-status]')!;
+  let sending = false;
+  const update = () => {
+    const s = telemetry.status;
+    report.innerHTML = reportLine(telemetry, telemetry.history[0] ?? null);
+    label.textContent = sending ? 'SENDING…' : `SEND (${s.pending})`;
+    send.disabled = sending || !s.configured || s.pending === 0;
+    status.textContent = !s.configured ? 'No collector is set. Results are saved on this device.' : s.pending === 0 ? 'All results sent.' : s.lastError ? `Not sent: ${s.lastError}. Press SEND to retry.` : `${s.pending} results waiting to send.`;
+  };
+  send.addEventListener('click', async () => {
+    sending = true;
+    update();
+    try {
+      await telemetry.flush();
+    } finally {
+      sending = false;
+      update();
+    }
+  });
+  telemetry.onChange = update;
+  update();
+  return () => {
+    if (telemetry.onChange === update) telemetry.onChange = null;
+  };
 }

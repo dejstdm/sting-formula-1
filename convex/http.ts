@@ -46,7 +46,7 @@ http.route({
       return new Response('bad json', { status: 400, headers: cors });
     }
     const r = report as { id?: unknown; v?: unknown; race?: unknown };
-    if (typeof r.id !== 'string' || r.v !== 1 || typeof r.race !== 'object') return new Response('bad report', { status: 400, headers: cors });
+    if (typeof r.id !== 'string' || (r.v !== 1 && r.v !== 2) || typeof r.race !== 'object') return new Response('bad report', { status: 400, headers: cors });
     await ctx.runMutation(internal.perf.insert, { report });
     return new Response('ok', { status: 200, headers: cors });
   }),

@@ -1,7 +1,7 @@
 import './style.css';
 import { Application, Assets, Container, type Texture } from 'pixi.js';
 import { GameAudio } from './audio';
-import { deviceConsole, reportLine } from './debug/console';
+import { deviceConsole, reportLine, resultSendControls } from './debug/console';
 import { Telemetry } from './debug/telemetry';
 import type { FinishTextures } from './race/finish';
 import { RaceScene, type RaceResult, type SceneOptions, type SceneTextures } from './race/scene';
@@ -277,7 +277,7 @@ async function main() {
       screens.clear();
       const result = await playRace(params.get('play'), true);
       const extra = telemetry ? reportLine(telemetry, telemetry.history[0] ?? null) : '';
-      const next = await screens.result(result, extra);
+      const next = await screens.result(result, extra, telemetry ? (el) => resultSendControls(el, telemetry) : undefined);
       if (next === 'card') {
         const after = await screens.card(result);
         if (after === 'redeem') await screens.reward();

@@ -287,14 +287,15 @@ export class Screens {
   }
 
   /** Figma 18 (win) and 19 (lose). Resolves 'card' or 'again'. */
-  async result(r: RaceResult, extra = ''): Promise<'again' | 'card'> {
+  async result(r: RaceResult, extra = '', setupDebug?: (el: HTMLElement) => () => void): Promise<'again' | 'card'> {
     const hit = (g: Grade) => g === 'perfect' || g === 'good';
     if (r.won) this.audio.win();
     else this.audio.lose();
-    const dbg = extra ? `<p class="dbg">${extra}</p>` : '';
+    const dbg = extra ? `<div class="dbg">${extra}</div>` : '';
     let done: Promise<string>;
+    let el: HTMLElement;
     if (r.won) {
-      ({ done } = this.flow(
+      ({ done, el } = this.flow(
         'win',
         `
         <i class="rglow"></i>
@@ -313,7 +314,7 @@ export class Screens {
           : only3
             ? 'One big Boost is not enough. Land at least 2 of the 3.'
             : 'Watch the ring and tap the moment it fits the button.';
-      ({ done } = this.flow(
+      ({ done, el } = this.flow(
         'lose',
         `
         <h1 class="rhead" style="top:422.8px;font-size:50px">RIVAL WINS</h1>
@@ -324,7 +325,12 @@ export class Screens {
         ${this.button('card', 'SEE MY CARD', 'secondary', 710)}`,
       ));
     }
-    return (await done) as 'again' | 'card';
+    const cleanup = setupDebug?.(el);
+    try {
+      return (await done) as 'again' | 'card';
+    } finally {
+      cleanup?.();
+    }
   }
 
   /** Figma 20: the score card. Resolves 'redeem', 'again' or 'share'. */

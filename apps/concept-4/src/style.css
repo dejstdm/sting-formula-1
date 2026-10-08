@@ -1357,6 +1357,20 @@ body:not(.room) #stage-frame i {
   color: #8f8;
   text-align: left;
 }
+#ui .flow .dbg .cta {
+  display: block;
+  width: calc(100% - 28px);
+  height: 40px;
+  margin: 10px 12px;
+  font-size: 18px;
+}
+#ui .flow .dbg .cta:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+#ui .flow .dbg p {
+  margin: 8px 0 0;
+}
 
 /* 20: score card */
 #ui .flow .scard {

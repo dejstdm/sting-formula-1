@@ -73,6 +73,13 @@ export class Screens {
   private buildControls(): HTMLElement {
     const box = document.createElement('div');
     box.className = 'controls';
+    // Back to the home page (the device test page, with links to Play and Results).
+    const home = document.createElement('a');
+    home.className = 'round';
+    home.href = '/';
+    home.setAttribute('aria-label', 'Home');
+    home.innerHTML = '<svg viewBox="0 0 24 24"><path d="M12 3.5L2.5 11.5h2.8V20h5.2v-5.5h3V20h5.2v-8.5h2.8z"/></svg>';
+    box.appendChild(home);
     const mute = document.createElement('button');
     mute.className = 'round';
     mute.setAttribute('aria-label', 'Sound on or off');
@@ -109,7 +116,8 @@ export class Screens {
 
   /** Show a screen and resolve with the id of the button that was pressed. */
   private show(cls: string, html: string): { done: Promise<string>; el: HTMLElement } {
-    this.layer.className = `layer ${cls}`;
+    // `enter` animates the new content in (style.css); the countdown lights run their own sequence.
+    this.layer.className = `layer ${cls}${/\blights\b/.test(cls) ? '' : ' enter'}`;
     this.layer.innerHTML = html;
     this.placeControls(/\bover\b/.test(cls));
     const el = this.layer;

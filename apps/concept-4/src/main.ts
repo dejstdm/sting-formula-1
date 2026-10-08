@@ -289,6 +289,7 @@ async function main() {
 
 function startDebug(app: Application) {
   const el = document.createElement('pre');
+  el.id = 'fps';
   el.style.cssText = 'position:fixed;left:4px;bottom:4px;margin:0;padding:4px 6px;font:11px/1.3 monospace;color:#0f0;background:rgba(0,0,0,.7);z-index:9;pointer-events:none';
   document.body.appendChild(el);
   let frames = 0;

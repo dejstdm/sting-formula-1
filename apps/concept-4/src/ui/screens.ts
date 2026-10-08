@@ -21,6 +21,20 @@ export interface Frame {
 
 const BASE = import.meta.env.BASE_URL;
 
+/**
+ * Design height each screen needs to show everything. When the phone shows less, the
+ * screen shrinks to fit, centred, and the background fills the sides. The result screens
+ * are exact Figma artboards (812 tall); the others stretch down to 700. Unlisted screens
+ * (the device test console scrolls) never shrink.
+ */
+const NEEDS: [RegExp, number][] = [
+  [/\bflow\b/, 812],
+  [/\bonb\b|\bcharging\b|\bregister\b/, 700],
+];
+/** Figma artboard height, and the most the onboarding screens may close up (style.css --lift). */
+const ARTBOARD_H = 812;
+const MAX_LIFT = 130;
+
 const GRADE_LABEL: Record<Grade, string> = { perfect: 'PERFECT', good: 'GOOD', early: 'TOO EARLY', late: 'TOO LATE', miss: 'MISSED' };
 
 export class Screens {
@@ -29,6 +43,12 @@ export class Screens {
   private controls: HTMLElement;
   private audio: GameAudio;
   private frame!: Frame;
+  /**
+   * Full-window copy of the current screen's background, for phones where the screen
+   * column is narrower than the window (the screens shrink to fit short phones).
+   */
+  private backdrop: HTMLElement;
+  private gaps = false;
   /** First name typed on the registration screen. Lives in memory only. */
   playerName = 'MAX';
 
@@ -40,12 +60,58 @@ export class Screens {
     this.layer.className = 'layer';
     this.controls = this.buildControls();
     this.root.append(this.layer, this.controls);
-    host.appendChild(this.root);
+    this.backdrop = document.createElement('div');
+    this.backdrop.id = 'ui-backdrop';
+    host.append(this.backdrop, this.root);
+  }
+
+  /** Shrink the current screen if the column is shorter than it needs, and set its --lift. */
+  private fit(): void {
+    const l = this.layer.style;
+    const h = this.frame.height;
+    const need = NEEDS.find(([re]) => re.test(this.layer.className))?.[1] ?? 0;
+    const k = need ? Math.min(1, h / need) : 1;
+    this.shrunk = k < 1;
+    if (this.shrunk) {
+      l.bottom = 'auto';
+      l.height = `${h / k}px`;
+      l.transform = `scale(${k})`;
+      l.transformOrigin = '50% 0';
+    } else {
+      for (const prop of ['bottom', 'height', 'transform', 'transform-origin']) l.removeProperty(prop);
+    }
+    // How much shorter than the Figma artboard the screen is, after the bottom safe area.
+    const usable = h / k - this.frame.safeBottom;
+    l.setProperty('--lift', `${Math.max(0, Math.min(MAX_LIFT, ARTBOARD_H - usable))}px`);
+  }
+
+  private shrunk = false;
+
+  /** Show the screen's background across the whole window when the column leaves gaps at the sides. */
+  private syncBackdrop(): void {
+    const l = this.layer.style;
+    l.removeProperty('background');
+    const b = this.backdrop.style;
+    if (!(this.gaps || this.shrunk) || !/\bscreen\b/.test(this.layer.className)) {
+      b.display = 'none';
+      return;
+    }
+    const cs = getComputedStyle(this.layer);
+    b.display = 'block';
+    b.backgroundColor = cs.backgroundColor;
+    b.backgroundImage = cs.backgroundImage;
+    b.backgroundSize = cs.backgroundSize;
+    b.backgroundPosition = cs.backgroundPosition;
+    b.backgroundRepeat = cs.backgroundRepeat;
+    l.background = 'transparent';
   }
 
   /** Place the design-space column over the canvas. */
-  place(f: Frame, topInset: number): void {
+  place(f: Frame, topInset: number, windowWidth: number): void {
     this.frame = f;
+    this.gaps = !document.body.classList.contains('wide') && windowWidth - f.width * f.scale > 1;
+    this.fit();
+    this.syncBackdrop();
     const s = this.root.style;
     s.width = `${f.width}px`;
     s.height = `${f.height}px`;
@@ -67,6 +133,8 @@ export class Screens {
   clear(): void {
     this.layer.replaceChildren();
     this.layer.className = 'layer';
+    this.fit();
+    this.syncBackdrop();
     this.placeControls(true);
   }
 
@@ -119,6 +187,10 @@ export class Screens {
     // `enter` animates the new content in (style.css); the countdown lights run their own sequence.
     this.layer.className = `layer ${cls}${/\blights\b/.test(cls) ? '' : ' enter'}`;
     this.layer.innerHTML = html;
+    this.layer.style.removeProperty('background');
+    this.fit();
+    // After the caller has set the screen's --backdrop.
+    requestAnimationFrame(() => this.syncBackdrop());
     this.placeControls(/\bover\b/.test(cls));
     const el = this.layer;
     const done = new Promise<string>((resolve) => {

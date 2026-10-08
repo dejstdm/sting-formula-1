@@ -19,7 +19,7 @@ const MAX_RESOLUTION = Number(params.get('res')) || 2;
 
 /** On wide screens the game is a phone-shaped column: clip the picture to it and frame it. */
 function fitStage(l: ReturnType<typeof layout>): void {
-  const wide = l.vw / l.vh > 0.62;
+  const wide = l.wide;
   document.body.classList.toggle('wide', wide);
   document.body.classList.toggle('room', wide && l.vw - l.width * l.scale > 760);
   const st = document.documentElement.style;
@@ -45,30 +45,59 @@ function url(file: string): string {
 
 /** Fit a phone-shaped design space into the window. Wide windows get a centred column. */
 const BOX_FILL = 0.88; // on desktop the game box fills this share of the window height
+/** Up to this width the window is a phone, whatever its shape (a short browser window included). */
+const PHONE_MAX_W = 520;
+/** Design height the race needs (HUD, runners, Boost button). Shorter screens get a wider stage instead. */
+const RACE_MIN_H = 600;
+/** Below this design height the whole screen column shrinks; each screen also shrinks itself if it needs more (ui/screens.ts NEEDS). */
+const SCREEN_MIN_H = Number(params.get('sh')) || 600;
 
 function layout() {
   const vw = window.innerWidth;
   const vh = window.innerHeight;
-  let scale: number;
-  let height: number;
-  if (vw / vh > 0.62) {
-    height = DESIGN_H;
-    scale = (vh * BOX_FILL) / DESIGN_H;
-  } else {
-    scale = vw / DESIGN_W;
-    height = Math.max(600, vh / scale);
-  }
+  const wide = vw > PHONE_MAX_W && vw / vh > 0.62;
   const probe = getComputedStyle(document.getElementById('safe-probe')!);
+  const safeTop = parseFloat(probe.paddingTop);
+  const safeBottom = parseFloat(probe.paddingBottom);
+  if (wide) {
+    const scale = (vh * BOX_FILL) / DESIGN_H;
+    const frame = {
+      scale,
+      width: DESIGN_W,
+      height: DESIGN_H,
+      x: (vw - DESIGN_W * scale) / 2,
+      y: (vh - DESIGN_H * scale) / 2,
+      safeTop: safeTop / scale,
+      safeBottom: safeBottom / scale,
+    };
+    return { vw, vh, wide, ...frame, screen: frame };
+  }
+  // Phones: the race fills the whole screen. It is 375 wide unless the screen is too short
+  // for RACE_MIN_H, then it gets wider instead of being cut off at the bottom.
+  const scale = Math.min(vw / DESIGN_W, vh / RACE_MIN_H);
+  const width = vw / scale;
+  // The Figma screens are a 375 wide column, shrunk when the screen is shorter than SCREEN_MIN_H.
+  const sScale = Math.min(vw / DESIGN_W, vh / SCREEN_MIN_H);
   return {
     vw,
     vh,
+    wide,
     scale,
-    width: DESIGN_W,
-    height,
-    x: (vw - DESIGN_W * scale) / 2,
-    y: (vh - height * scale) / 2,
-    safeTop: parseFloat(probe.paddingTop) / scale,
-    safeBottom: parseFloat(probe.paddingBottom) / scale,
+    width,
+    height: vh / scale,
+    x: 0,
+    y: 0,
+    safeTop: safeTop / scale,
+    safeBottom: safeBottom / scale,
+    screen: {
+      scale: sScale,
+      width: DESIGN_W,
+      height: vh / sScale,
+      x: (vw - DESIGN_W * sScale) / 2,
+      y: 0,
+      safeTop: safeTop / sScale,
+      safeBottom: safeBottom / sScale,
+    },
   };
 }
 
@@ -191,7 +220,8 @@ async function main() {
     root.addChild(scene);
     scene.warmUp(app.renderer);
     if (finishArt) scene.setFinishArt(finishArt, app.renderer);
-    screens.place({ x: l.x, y: l.y, scale: l.scale, width: l.width, height: l.height, safeTop: l.safeTop, safeBottom: l.safeBottom }, scene.topInset);
+    // The race HUD inset is in race design units; the screens have their own scale.
+    screens.place(l.screen, (scene.topInset * l.scale) / l.screen.scale, l.vw);
   };
   build();
   // Start fetching the finish pictures only once the first frame is up.

@@ -48,6 +48,14 @@ body {
 
 /* ---------- Screens around the race (design space: 375 px wide) ---------- */
 
+#ui-backdrop {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 4;
+  pointer-events: none;
+}
+
 #ui {
   position: fixed;
   left: 0;
@@ -964,7 +972,7 @@ body:not(.room) #stage-frame i {
 #ui .charging .glow {
   position: absolute;
   left: 38px;
-  top: 150px;
+  top: calc(150px - min(var(--lift, 0px), 100px));
   width: 300px;
   height: 300px;
   border-radius: 50%;
@@ -974,7 +982,7 @@ body:not(.room) #stage-frame i {
 #ui .charging .can {
   position: absolute;
   left: 134px;
-  top: 181px;
+  top: calc(181px - min(var(--lift, 0px), 100px));
   width: 107px;
   height: 237.6px;
   margin: 0;
@@ -985,7 +993,7 @@ body:not(.room) #stage-frame i {
   position: absolute;
   left: 0;
   right: 0;
-  top: 450px;
+  top: calc(450px - var(--lift, 0px));
   margin: 0;
   font-size: 64px;
   line-height: 0.92;
@@ -1007,7 +1015,7 @@ body:not(.room) #stage-frame i {
   position: absolute;
   left: 0;
   right: 0;
-  top: 593px;
+  top: calc(593px - var(--lift, 0px));
 }
 #ui .charging .ebar {
   position: relative;
@@ -1072,6 +1080,8 @@ body:not(.room) #stage-frame i {
     var(--backdrop) center / cover no-repeat,
     #000;
 }
+/* Onboarding (Figma 05, 06): Figma positions in the 812 artboard. The dots and button sit
+   on the bottom; on shorter screens the middle block closes up by --lift (set by Screens). */
 #ui .onb > * {
   position: absolute;
 }
@@ -1116,12 +1126,12 @@ body:not(.room) #stage-frame i {
 }
 #ui .onb .dots {
   left: 161.4px;
-  top: 675px;
+  bottom: calc(var(--safe-bottom, 0px) + 131px);
 }
 #ui .onb .actions {
   left: 24px;
   right: 24px;
-  top: 710px;
+  bottom: calc(var(--safe-bottom, 0px) + 48px);
 }
 #ui .onb .actions .cta {
   display: block;
@@ -1146,7 +1156,7 @@ body:not(.room) #stage-frame i {
 /* 05: the Boost button */
 #ui .how .bb {
   left: 65.5px;
-  top: 196px;
+  top: calc(196px - min(var(--lift, 0px), 100px));
   width: 244px;
   height: 244px;
 }
@@ -1222,15 +1232,15 @@ body:not(.room) #stage-frame i {
   }
 }
 #ui .how .head {
-  top: 488px;
+  top: calc(488px - var(--lift, 0px));
 }
 #ui .how .copy {
-  top: 538.8px;
+  top: calc(538.8px - var(--lift, 0px));
 }
 
 /* 06: the matchup */
 #ui .rival .pl {
-  top: 150px;
+  top: calc(150px - min(var(--lift, 0px), 60px));
   width: 134.61px;
   height: 249.33px;
 }
@@ -1302,7 +1312,7 @@ body:not(.room) #stage-frame i {
 }
 #ui .rival .vs {
   left: 192.39px;
-  top: 250.23px;
+  top: calc(250.23px - min(var(--lift, 0px), 60px));
   width: 65.79px;
   color: #f00;
   font-size: 44px;
@@ -1313,7 +1323,7 @@ body:not(.room) #stage-frame i {
 }
 #ui .rival .bolts {
   left: 132.95px;
-  top: 424.33px;
+  top: calc(424.33px - min(var(--lift, 0px), 60px));
   display: flex;
   gap: 24px;
 }
@@ -1339,10 +1349,10 @@ body:not(.room) #stage-frame i {
   }
 }
 #ui .rival .head {
-  top: 488.3px;
+  top: calc(488.3px - min(var(--lift, 0px), 84px));
 }
 #ui .rival .copy {
-  top: 539.1px;
+  top: calc(539.1px - min(var(--lift, 0px), 84px));
 }
 
 /* 07a, 07b, 08: the countdown */

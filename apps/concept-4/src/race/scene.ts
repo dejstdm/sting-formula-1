@@ -310,7 +310,7 @@ export class RaceScene extends Container {
   update(dt: number): void {
     if (this.state === 'armed') {
       // Waiting on the grid: runners stand ready, the road is still.
-      this.placeRunners(0, 0);
+      this.placeRunners(0, 0, dt);
       this.placeGate(0);
       this.hudBottom.setEnergy(1);
       return;
@@ -389,7 +389,7 @@ export class RaceScene extends Container {
     this.rivalDist += dRival;
     this.road.advance(dPlayer);
 
-    this.placeRunners(dPlayer, dRival);
+    this.placeRunners(dPlayer, dRival, dt);
     this.placeGate(dt);
     this.runFinish(t, dt, won, sequence);
     this.applyEffects(dt);
@@ -402,12 +402,12 @@ export class RaceScene extends Container {
     this.hudBottom.setEnergy(this.shownEnergy);
   }
 
-  private placeRunners(dPlayer: number, dRival: number): void {
+  private placeRunners(dPlayer: number, dRival: number, dt: number): void {
     const gap = Math.max(PACE.rivalMinGap, this.rivalDist - this.playerDist);
     const p = placeOnGround(this.fit, RUNNERS.playerZ, RUNNERS.playerLane);
     const r = placeOnGround(this.fit, RUNNERS.playerZ + gap, RUNNERS.rivalLane);
-    this.player.update(p.x, p.y, p.height, dPlayer);
-    this.rival.update(r.x, r.y, r.height, dRival);
+    this.player.update(p.x, p.y, p.height, dPlayer, dt);
+    this.rival.update(r.x, r.y, r.height, dRival, dt);
     // Whoever is nearer the camera is drawn in front.
     this.player.zIndex = p.y;
     this.rival.zIndex = r.y;

@@ -57,24 +57,62 @@ def save(img, name, quality=86, lossless=False):
 
 
 RUN_SHEETS = {
-    # Cells read left to right, top row first. The order puts them in cycle order:
-    # one leg lifts, kicks up behind, swings forward, flight; then the other leg.
-    'max': ('max-run8-a', (1, 6, 3, 4, 5, 2, 7, 8)),
-    'rival': ('rival-run8-a', (1, 2, 3, 4, 5, 6, 7, 8)),
+    # (sheet, columns, rows, cell order). A 4-cell sheet is half a stride (left foot down,
+    # right leg swinging; see prompts/*-run4.txt): the second half is the same four frames
+    # mirrored, with the original head kept so the hair does not flip sides.
+    'max': ('max-run4-a', 4, 1, (1, 2, 3, 4)),
+    'rival': ('rival-run4-b', 4, 1, (1, 2, 3, 4)),
 }
+NECK = 0.13            # share of the figure height from the head top down to the neck
+
+
+def mirror_body(cell):
+    """The cell mirrored around the head, with the unmirrored head and hair blended back in."""
+    box = bbox(cell)
+    hx = head_x(cell, box)
+    flipped = cell.transpose(Image.FLIP_LEFT_RIGHT)
+    out = Image.new('RGBA', cell.size)
+    out.paste(flipped, (round(2 * hx - cell.width), 0), flipped)
+    # Keep the original only in a window around the head that also covers where the
+    # mirrored hair would be, so raised arms at shoulder height stay mirrored. Above the
+    # neck the mirrored hair is cleared; the original head is laid over it and fades out
+    # into the mirrored collar, which stays solid.
+    h = box[3] - box[1]
+    neck = round(box[1] + NECK * h)
+    fade = 0.04 * h
+    hb = bbox(cell.crop((0, box[1], cell.width, round(box[1] + 0.09 * h))))
+    r = max(hx - hb[0], hb[2] - hx) + 6
+    edge = Image.new('L', (cell.width, 1), 0)
+    ImageDraw.Draw(edge).line((hx - r, 0, hx + r, 0), fill=255)
+    edge = edge.filter(ImageFilter.BoxBlur(3)).resize(cell.size)   # soft at the sides only
+    rows = Image.new('L', (1, cell.height), 0)
+    for y in range(cell.height):
+        rows.putpixel((0, y), 255 if y < neck else 0)
+    out.putalpha(ImageChops.multiply(out.getchannel('A'), ImageChops.invert(ImageChops.multiply(edge, rows.resize(cell.size)))))
+    for y in range(cell.height):
+        rows.putpixel((0, y), int(255 * max(0.0, min(1.0, (neck + fade - y) / fade))))
+    head = cell.copy()
+    head.putalpha(ImageChops.multiply(cell.getchannel('A'), ImageChops.multiply(edge, rows.resize(cell.size))))
+    out.alpha_composite(head)
+    return out
 
 
 def run_strip(who):
     """8-frame run cycle as a 4x2 sheet. Frames share one scale, the head top on one line
-    and the head centred, so the bounce and the flight drawn in the art are kept."""
-    sheet, order = RUN_SHEETS[who]
-    cells = [key_green(c) for c in grid(Image.open(GEN / f'{sheet}.png'), 4, 2)]
+    and the head centred; the bounce comes from src/race/runner.ts."""
+    sheet, cols, rows, order = RUN_SHEETS[who]
+    cells = [key_green(c) for c in grid(Image.open(GEN / f'{sheet}.png'), cols, rows)]
     cells = [cells[i - 1] for i in order]
+    if len(cells) == 4:
+        cells += [mirror_body(c) for c in cells]
     boxes = [bbox(c) for c in cells]
     heads = [head_x(c, b) for c, b in zip(cells, boxes)]
     half_w = max(max(hx - b[0], b[2] - hx) for hx, b in zip(heads, boxes)) + PAD
-    figure = max(b[3] - b[1] for b in boxes)   # head top to the lowest planted foot
-    height = figure + 2 * PAD
+    # The figure is measured to the planted foot in mid-stance (frame 2), which stands on
+    # the road; a foot swung back towards the camera may reach lower than that.
+    figure = boxes[1][3] - boxes[1][1]
+    reach = max(b[3] - b[1] for b in boxes)
+    height = reach + 2 * PAD
     scale = FRAME_H / figure
     fw, fh = round(half_w * 2 * scale), round(height * scale)
     strip = Image.new('RGBA', (fw * 4, fh * 2))
@@ -84,6 +122,7 @@ def run_strip(who):
         strip.alpha_composite(f.resize((fw, fh), Image.LANCZOS), ((i % 4) * fw, (i // 4) * fh))
     save(strip, f'runner-{who}-run', quality=88)
     print(f'  frame {fw}x{fh}, head top {round(PAD * scale)}px, ground {round((PAD + figure) * scale)}px from the frame top')
+    print('  frame bottoms', [round((PAD + b[3] - b[1]) * scale) for b in boxes])
 
 
 def gate():

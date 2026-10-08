@@ -1,6 +1,3 @@
-import '@fontsource/anton/400.css';
-import '@fontsource/barlow-condensed/600.css';
-import '@fontsource/barlow-condensed/700.css';
 import './style.css';
 import './results.css';
 

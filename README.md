@@ -11,7 +11,7 @@ Four concepts, each built on its own so they can be compared. They are prototype
 | 3 | `/concept-3/` | Deck's own view, runners from behind, Canvas 2D, built for low-end phones | [apps/concept-3](apps/concept-3/README.md) |
 | 4 | `/concept-4/` | The client's Figma design in PixiJS: full flow from registration to prize, sound, F1 finish, device test | [apps/concept-4](apps/concept-4/README.md) |
 
-`/` is a home page listing the concepts with a screenshot and a short note on how each is built. An old link such as `/?name=MAX` still opens concept 1 and keeps the query string.
+`/` is the page we send to colleagues: it asks them to run the concept 4 device test on their phone, explains the steps, and has a QR code for anyone who opens it on a computer. Concepts 1 to 3, built before the Figma design was finished, sit below it as earlier prototypes. An old link such as `/?name=MAX` still opens concept 1 and keeps the query string.
 
 Live: https://sting-formula-1.vercel.app/ (only `main` is deployed; concept 4 appears at https://sting-formula-1.vercel.app/concept-4/ once its branch is merged)
 
@@ -23,7 +23,7 @@ npm run dev              # concept 1  http://localhost:5173/concept-1/  (also on
 npm run dev:concept-2    # http://localhost:5174/concept-2/
 npm run dev:concept-3    # http://localhost:5175/concept-3/
 npm run dev:concept-4    # http://localhost:5177/concept-4/
-npm run dev:home         # http://localhost:5176/  (the concept list only)
+npm run dev:home         # http://localhost:5176/  (the home and results pages only)
 npm run build            # each app builds on its own, then dist/ is assembled
 npm run preview          # http://localhost:4173/ from that dist/
 npm run shots            # refresh the home-page screenshots (needs a built dist/)
@@ -41,13 +41,13 @@ Each concept's README lists its own URL flags, rules, tests and structure. Commo
 
 One Vercel project: `vercel.json` runs `npm run build`, serves `dist/`, and uses trailing slashes. Environment variable for the concept 4 device test: `VITE_PERF_URL` (see the concept 4 README). The Convex functions in `convex/` are deployed separately with `npx convex deploy`.
 
-The home page links to the concept 4 debug test and `/results/`. The results page reads live measurements through the Vercel server function `/api/device-results`. Set `PERF_READ_KEY` in the Vercel project's environment variables for each environment that serves results. Keep it server-only, without a `VITE_` prefix. The collector comes from `PERF_COLLECTOR_URL`, then `VITE_PERF_URL`, with the current `lovable-kingfisher-451.eu-west-1.convex.site` deployment as the fallback. Redeploy Vercel after changing these variables. No Convex redeploy is needed for the results page. Local `npm run dev:home` also serves this endpoint, using the root `.env.local`.
+The home page links to the concept 4 debug test and `/results/`. Both links and the QR code on the home page are relative to the site serving the page, so the test site links to its own test (with its collector) and a local preview links to the local game. The collector is set per build through `VITE_PERF_URL`; without it, results stay on the phone. The results page reads live measurements through the Vercel server function `/api/device-results`. Set `PERF_READ_KEY` in the Vercel project's environment variables for each environment that serves results. Keep it server-only, without a `VITE_` prefix. The collector comes from `PERF_COLLECTOR_URL`, then `VITE_PERF_URL`, with the current `lovable-kingfisher-451.eu-west-1.convex.site` deployment as the fallback. Redeploy Vercel after changing these variables. No Convex redeploy is needed for the results page. Local `npm run dev:home` also serves this endpoint, using the root `.env.local`.
 
 ## Repository layout
 
 ```
 apps/concept-1 .. concept-4   one app each, with its own README
-apps/home/                    the concept list at /
+apps/home/                    the test page at / and the results at /results/
 convex/                       collector for concept 4 device test results
 scripts/assemble.mjs          builds every app, then copies them into dist/
 scripts/screenshots.mjs       phone shots of a Perfect Boost, for the home page
@@ -55,7 +55,7 @@ doc/                          plans, handoffs, performance findings
 vercel.json                   one project, trailing slash, / serves the home page
 ```
 
-To add a concept: build it as `apps/concept-N/` with `base: '/concept-N/'`, add it to the list in `scripts/assemble.mjs` and `apps/home/src/concepts.js`, give it a README, then `npm run build` and `npm run shots`.
+To add a concept: build it as `apps/concept-N/` with `base: '/concept-N/'`, add it to the list in `scripts/assemble.mjs`, link it from `apps/home/index.html` (or list it in `apps/home/src/concepts.js` with the earlier prototypes), give it a README, then `npm run build` and `npm run shots`.
 
 ## Rules in brief
 

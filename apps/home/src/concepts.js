@@ -1,43 +1,28 @@
-/** One entry per concept. Add a screenshot under public/shots/ with the same id. */
-export const concepts = [
+/**
+ * Concept 4 (/concept-4/) is the game under test; the hero in index.html links to it.
+ * These are the earlier prototypes, built before the Figma design was finished.
+ * Each one has a screenshot under public/shots/ with the same id.
+ */
+export const earlier = [
   {
     id: 'concept-1',
     name: 'Concept 1',
-    pitch: 'A full 3D race in a neon stadium.',
-    how: 'The track, crowd, can and car are built in code. The runner is a stock 3D mannequin, standing in until there is a real character.',
-    uses: 'three.js, WebGPU with a WebGL2 fallback, full-screen shader effects, and sound made in the browser. The picture steps down on a slow device.',
-    size: '1.1 MB',
-    status: 'The richest picture. Happiest on a decent phone or a laptop.',
+    pitch: 'Full 3D race in a neon stadium.',
+    uses: 'three.js, WebGPU / WebGL2',
     shot: 'shots/concept-1.webp',
   },
   {
     id: 'concept-2',
     name: 'Concept 2',
-    pitch: 'A light 2D race, seen from the side.',
-    how: 'Illustrated sprite sheets (start, run, win) drawn on a canvas. The track and the boost flash are drawn in code. Same 15-second rules as the others.',
-    uses: 'Canvas 2D, TypeScript and Vite. Sound is synthesised, so there are no audio files. The code is small; the sprite sheets are not.',
-    size: '7.1 MB',
-    status: 'Light to run, heavy to download.',
+    pitch: 'Light 2D race, seen from the side.',
+    uses: 'Canvas 2D, sprite sheets',
     shot: 'shots/concept-2.webp',
   },
   {
     id: 'concept-3',
     name: 'Concept 3',
-    pitch: 'The deck’s own view: neon runners, seen from behind.',
-    how: 'Art is generated (OpenAI images through the Codex image tool), then a Python script cuts it into sprites. A simple perspective places them on the track.',
-    uses: 'Canvas 2D, TypeScript and Vite, plus synthesised sound. No shaders and no 3D engine, so a cheap phone can run it.',
-    size: '1.3 MB',
-    status: 'Closest to the deck, and the one aimed at low-end phones.',
+    pitch: 'Neon runners seen from behind, as in the deck.',
+    uses: 'Canvas 2D, generated art',
     shot: 'shots/concept-3.webp',
-  },
-  {
-    id: 'concept-4',
-    name: 'Concept 4',
-    pitch: 'The client’s Figma design, running: red, black and white, seen from behind.',
-    how: 'The track, HUD and Boost button come straight from the designer’s Figma file. A shader scrolls the illustrated road in true perspective. The run cycles are generated to match the designer’s runners.',
-    uses: 'PixiJS on WebGL, TypeScript and Vite. Everything that moves each frame is drawn on the GPU, with no page layout in the race. It has the whole flow: registration, start lights, the race, the F1 finish, win and lose, with synthesised sound.',
-    size: '0.6 MB',
-    status: 'Playable end to end. Waiting for tests on real phones.',
-    shot: 'shots/concept-4.webp',
   },
 ];

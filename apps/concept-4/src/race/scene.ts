@@ -2,6 +2,7 @@ import { Container, Sprite, Texture, type Renderer } from 'pixi.js';
 import { BoostButton, type BoostButtonTextures } from './boostButton';
 import { Finish, FINISH, type FinishTextures } from './finish';
 import { Banner, Flash, Sparks, SpeedLines } from './fx';
+import { Gate, GATE, shownDistance } from './gate';
 import { boostPower, gradeTap, isHit, outcomeOf, RULES, type Grade, type Outcome } from './rules';
 import { HudBottom, HudTop, type HudTextures } from './hud';
 import { Road } from './road';
@@ -26,10 +27,15 @@ export const PACE = {
   look: [0.6, 0.9, 1.4],
 } as const;
 
+/** How far the rival runs by finishAt, in dash periods. */
+const RACE_LENGTH = PACE.rivalSpeed * RULES.finishAt;
+
 export interface SceneTextures extends BoostButtonTextures, HudTextures {
   backdrop: Texture;
+  /** 8-frame run cycles, 4x2 sheets (race/runner.ts). */
   playerRun: Texture;
   rivalRun: Texture;
+  gate: Texture;
   flash: Texture;
   /** The three F1 illustrations of the finish. Optional: without them the win just ends. */
   finish?: FinishTextures;
@@ -105,6 +111,7 @@ export class RaceScene extends Container {
   private vp: { x: number; y: number };
   private world = new Container();
   private road: Road;
+  private gate: Gate;
   private player: Runner;
   private rival: Runner;
   private runners = new Container();
@@ -124,6 +131,8 @@ export class RaceScene extends Container {
   private shownEnergy = 1;
   private playerDist = 0;
   private rivalDist = 0;
+  /** Distance of the finish line from the start: where the leader is when the clock reaches finishAt. */
+  private lineDist = RACE_LENGTH;
   private surge = 0;
   private boost = 0;
   private boostDone = false;
@@ -148,6 +157,7 @@ export class RaceScene extends Container {
     this.road = new Road(t.backdrop, renderer);
     this.road.position.set(this.fit.x, this.fit.y);
     this.road.scale.set(this.fit.scale);
+    this.gate = new Gate(t.gate);
 
     this.flash = new Flash(t.flash, W, H);
     this.flash.place(W / 2, H * (380 / 812));
@@ -166,7 +176,8 @@ export class RaceScene extends Container {
     // Zoom kicks scale the world about the vanishing point.
     this.world.pivot.set(this.vp.x, this.vp.y);
     this.world.position.set(this.vp.x, this.vp.y);
-    this.world.addChild(this.road, this.flash, this.lines, fade, this.runners);
+    // The gate is always behind the runners: its opening is taller than them and its pillars stand outside both lanes.
+    this.world.addChild(this.road, this.gate, this.flash, this.lines, fade, this.runners);
 
     this.hudTop = new HudTop(W, Math.max(o.safeTop, 32), o.playerName);
     this.hudBottom = new HudBottom(W, H - Math.max(0, o.safeBottom - 12), t);
@@ -227,6 +238,7 @@ export class RaceScene extends Container {
     this.time = 0;
     this.energy = this.shownEnergy = 1;
     this.playerDist = this.rivalDist = 0;
+    this.lineDist = RACE_LENGTH;
     this.surge = 0;
     this.boost = 0;
     this.boostDone = false;
@@ -299,6 +311,7 @@ export class RaceScene extends Container {
     if (this.state === 'armed') {
       // Waiting on the grid: runners stand ready, the road is still.
       this.placeRunners(0, 0);
+      this.placeGate(0);
       this.hudBottom.setEnergy(1);
       return;
     }
@@ -377,11 +390,12 @@ export class RaceScene extends Container {
     this.road.advance(dPlayer);
 
     this.placeRunners(dPlayer, dRival);
+    this.placeGate(dt);
     this.runFinish(t, dt, won, sequence);
     this.applyEffects(dt);
 
     this.o.audio?.drive(this.coast * (vPlayer / PACE.rivalSpeed), this.energy);
-    const length = PACE.rivalSpeed * RULES.finishAt;
+    const length = RACE_LENGTH;
     // Figma screens 16 and 17 show 0:15 on the clock, screens 14 and 15 show 0:13.
     const clock = this.finish.picture >= 1 ? 15 : Math.min(t, RULES.finishAt);
     this.hudTop.update(clock, Math.min(1, this.playerDist / length), Math.min(1, this.rivalDist / length));
@@ -397,6 +411,17 @@ export class RaceScene extends Container {
     // Whoever is nearer the camera is drawn in front.
     this.player.zIndex = p.y;
     this.rival.zIndex = r.y;
+  }
+
+  /**
+   * The rival is at RACE_LENGTH when the clock reaches finishAt. A winning MAX is
+   * finishGap ahead of him then, so once the result is known the line eases out to there.
+   */
+  private placeGate(dt: number): void {
+    const target = RACE_LENGTH + (this.result?.won ? PACE.finishGap : 0);
+    this.lineDist += (target - this.lineDist) * Math.min(1, dt * 2.5);
+    const ahead = shownDistance(this.lineDist - this.playerDist, RACE_LENGTH, RUNNERS.playerZ);
+    this.gate.place(this.fit, Math.min(GATE.startZ, RUNNERS.playerZ + ahead));
   }
 
   private get hasFinishArt(): boolean {

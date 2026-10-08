@@ -1,0 +1,17 @@
+SPRITE SHEET of the SAME runner as in the attached reference image: the same athletic man with a shaved head, same dark grey short-sleeved running top with lighter grey side panels and thin dark red piping, same dark grey running shorts with white side panels, same white shoes. Same proportions and the same camera angle as the reference: full body seen from directly BEHIND and slightly above, running straight away from the camera (no face visible), slight forward lean.
+
+LAYOUT: landscape canvas 1536x1024, a grid of 4 columns x 2 rows of equal cells (each 384x512). One full-body figure per cell, head to shoes, horizontally centred, the SAME size in every cell, the body (hips and shoulders) at the same height in every cell, nothing crossing the cell borders, no grid lines, no numbers.
+
+The eight cells are eight consecutive, evenly spaced frames of ONE smooth, natural sprint cycle, read left to right, top row first. Seen from behind, a sprint shows mostly the SOLE of the shoe kicking up behind and the arms pumping:
+1) LEFT foot strikes the ground under the body; RIGHT leg behind, right heel lifting off; RIGHT arm forward (hand near the face, hidden), LEFT arm swung back (elbow out, fist by the hip).
+2) Left foot flat under the hips, body slightly lowest; RIGHT heel kicked up high behind toward the buttock, right sole fully visible; arms passing the sides.
+3) Left foot pushing off on the toes; RIGHT knee driving forward and up (right shoe now hidden under the body); LEFT arm forward, RIGHT arm back.
+4) FLIGHT, both feet off the ground: right knee forward and high, LEFT leg stretched back with the left sole visible; body highest.
+5) RIGHT foot strikes the ground under the body; LEFT leg behind, left heel lifting; LEFT arm forward, RIGHT arm swung back. (exact mirror of frame 1)
+6) Right foot flat, body lowest; LEFT heel kicked up high behind, left sole fully visible. (mirror of frame 2)
+7) Right foot pushing off; LEFT knee driving forward; RIGHT arm forward, LEFT arm back. (mirror of frame 3)
+8) FLIGHT: left knee forward, RIGHT leg stretched back, right sole visible; body highest. (mirror of frame 4)
+Arms always swing opposite to the legs. Character, outfit, colours, size and camera angle are identical in all eight frames; only the limbs and a small up-down bounce change.
+
+STYLE (must match the reference exactly): graphic poster illustration, bold flat vector shapes, hard-edged cel shading in greys and black with thin dark red #AE2129 accents, clean white highlights, crisp black outlines. Palette for the runner: black, greys, white, dark red #AE2129 accents, skin tones.
+BACKGROUND: perfectly flat pure chroma green #00FF00 everywhere outside the figures, no floor, no shadow, no gradient, no text, no logos, no watermark. Never use green on the runner.

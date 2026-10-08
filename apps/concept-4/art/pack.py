@@ -1,15 +1,17 @@
 """Turn the art in this folder into game-ready files in ../public/sprites/.
 
-- Run cycles: gen/<who>-run-sheet.png is a 2x2 sheet on chroma green. Each
-  cell is keyed to alpha, despilled, aligned on the head (x) and the feet (y),
-  scaled to FRAME_H and packed into one 4x1 strip per runner.
+- Run cycles: gen/<who>-run8-a.png is a 4x2 sheet on chroma green. Each cell is
+  keyed to alpha, despilled, put in cycle order, aligned on the head, scaled so
+  the figure is FRAME_H tall and packed into one 4x2 sheet per runner.
+- The finish gate: cut out of the Figma screen 14 backdrop. The small gate painted
+  into the race backdrop is filled in, because the game draws the gate itself.
 - The finish pictures: doc/concept-4/figma-finish/raw/ (the designer's Figma images), resized to 750 px wide.
 - Figma art (figma/): the track backdrop and the Sting can, re-encoded as WebP.
 
 Usage: python3 pack.py
 """
 from pathlib import Path
-from PIL import Image, ImageChops, ImageFilter
+from PIL import Image, ImageChops, ImageDraw, ImageFilter
 
 HERE = Path(__file__).parent
 GEN, FIGMA = HERE / 'gen', HERE / 'figma'
@@ -54,26 +56,110 @@ def save(img, name, quality=86, lossless=False):
     print(f'{name}.webp  {img.width}x{img.height}  {path.stat().st_size // 1024} KB')
 
 
+RUN_SHEETS = {
+    # Cells read left to right, top row first. The order puts them in cycle order:
+    # one leg lifts, kicks up behind, swings forward, flight; then the other leg.
+    'max': ('max-run8-a', (1, 6, 3, 4, 5, 2, 7, 8)),
+    'rival': ('rival-run8-a', (1, 2, 3, 4, 5, 6, 7, 8)),
+}
+
+
 def run_strip(who):
-    cells = [key_green(c) for c in grid(Image.open(GEN / f'{who}-run-sheet.png'), 2, 2)]
+    """8-frame run cycle as a 4x2 sheet. Frames share one scale, the head top on one line
+    and the head centred, so the bounce and the flight drawn in the art are kept."""
+    sheet, order = RUN_SHEETS[who]
+    cells = [key_green(c) for c in grid(Image.open(GEN / f'{sheet}.png'), 4, 2)]
+    cells = [cells[i - 1] for i in order]
     boxes = [bbox(c) for c in cells]
     heads = [head_x(c, b) for c, b in zip(cells, boxes)]
-    # One box per frame around the head anchor, feet on one baseline.
     half_w = max(max(hx - b[0], b[2] - hx) for hx, b in zip(heads, boxes)) + PAD
-    height = max(b[3] - b[1] for b in boxes) + 2 * PAD
-    frames = []
-    for cell, hx, b in zip(cells, heads, boxes):
+    figure = max(b[3] - b[1] for b in boxes)   # head top to the lowest planted foot
+    height = figure + 2 * PAD
+    scale = FRAME_H / figure
+    fw, fh = round(half_w * 2 * scale), round(height * scale)
+    strip = Image.new('RGBA', (fw * 4, fh * 2))
+    for i, (cell, hx, b) in enumerate(zip(cells, heads, boxes)):
         f = Image.new('RGBA', (int(half_w * 2), height))
-        f.alpha_composite(cell, (int(half_w - hx), height - PAD - b[3]))
-        frames.append(f)
-    # Scale so the tallest figure is FRAME_H; every frame keeps the same scale.
-    scale = FRAME_H / (height - 2 * PAD)
-    fw, fh = round(frames[0].width * scale), round(height * scale)
-    strip = Image.new('RGBA', (fw * 4, fh))
-    for i, f in enumerate(frames):
-        strip.alpha_composite(f.resize((fw, fh), Image.LANCZOS), (i * fw, 0))
-    save(strip, f'{who}-run', quality=88)
-    print(f'  frame {fw}x{fh}, feet {round(PAD * scale)}px above the frame bottom')
+        f.alpha_composite(cell, (int(half_w - hx), PAD - b[1]))
+        strip.alpha_composite(f.resize((fw, fh), Image.LANCZOS), ((i % 4) * fw, (i // 4) * fh))
+    save(strip, f'runner-{who}-run', quality=88)
+    print(f'  frame {fw}x{fh}, head top {round(PAD * scale)}px, ground {round((PAD + figure) * scale)}px from the frame top')
+
+
+def gate():
+    """The finish gate from Figma screen 14 (backdrop-track-14.png), cut out of the backdrop:
+    banner, both pillars, and the light under the banner fading out towards the road.
+
+    In screen 14 the opening under the banner is only about half a runner tall, so the
+    runners could not pass under it. The pillars are made taller by repeating whole
+    checker periods (PILLAR_REPEAT rows, PILLAR_COPIES times); the light is stretched."""
+    g = GATE
+    src = Image.open(FIGMA / 'backdrop-track-14.png').convert('RGB')
+    x0, x1, il, ir = g['x0'], g['x1'], g['inner_l'] - g['x0'], g['inner_r'] - g['x0']
+    w = x1 - x0
+    extra = PILLAR_REPEAT * PILLAR_COPIES
+    top_h, old_open = g['banner'] - g['top'], g['feet'] - g['banner']
+    new_open = old_open + extra
+    im = Image.new('RGB', (w, top_h + new_open))
+    im.paste(src.crop((x0, g['top'], x1, g['banner'])), (0, 0))
+    # Pillars: rows down to the cut, the repeated rows, then the rest down to the feet.
+    cut = g['pillar_cut']
+    for a, b in ((0, il), (ir, w)):
+        y = top_h
+        upper = src.crop((x0 + a, g['banner'], x0 + b, cut))
+        im.paste(upper, (a, y))
+        y += upper.height
+        for _ in range(PILLAR_COPIES):
+            im.paste(src.crop((x0 + a, cut - PILLAR_REPEAT, x0 + b, cut)), (a, y))
+            y += PILLAR_REPEAT
+        im.paste(src.crop((x0 + a, cut, x0 + b, g['feet'])), (a, y))
+    opening = src.crop((g['inner_l'], g['banner'], g['inner_r'], g['feet'])).resize((ir - il, new_open), Image.LANCZOS)
+    im.paste(opening, (il, top_h))
+
+    mask = Image.new('L', im.size, 0)
+    d = ImageDraw.Draw(mask)
+    d.rectangle((0, 0, w, top_h), fill=255)
+    d.rectangle((0, top_h, il, im.height), fill=255)
+    d.rectangle((ir, top_h, w, im.height), fill=255)
+    # The light: bright pixels only, fading out above the far road.
+    lum = im.convert('L')
+    glow_end = top_h + new_open * (g['glow_end'] - g['banner']) / old_open
+    for y in range(top_h, im.height):
+        fade = max(0.0, min(1.0, (glow_end - y) / (glow_end - top_h)))
+        if not fade:
+            break
+        for x in range(il, ir):
+            a = max(0.0, min(1.0, (lum.getpixel((x, y)) - 120) / 100)) * fade
+            if a:
+                mask.putpixel((x, y), int(255 * a))
+    out = im.convert('RGBA')
+    out.putalpha(mask.filter(ImageFilter.GaussianBlur(0.8)))
+    save(out.resize((out.width // 2 * 2, out.height // 2 * 2)), 'finish-gate', quality=88)
+
+
+# Gate edges in backdrop-track-14.png pixels (937 x 1679).
+GATE = dict(x0=121, x1=822, top=641, banner=743, feet=927, inner_l=205, inner_r=738, glow_end=880, pillar_cut=882)
+# The pillar checkers repeat every 44 rows; two periods are repeated twice.
+PILLAR_REPEAT, PILLAR_COPIES = 88, 2
+# The small gate painted into backdrop-track.png (768 x 1376), replaced by the moving gate.
+PAINTED_GATE = (343, 461, 427, 509)
+
+
+def race_backdrop():
+    """backdrop-track.png with its painted finish gate filled in, blending the glow above into the road below."""
+    im = Image.open(FIGMA / 'backdrop-track.png').convert('RGB')
+    x0, y0, x1, y1 = PAINTED_GATE
+    fill = im.copy()
+    for x in range(x0, x1):
+        a, b = im.getpixel((x, y0 - 1)), im.getpixel((x, y1))
+        for y in range(y0, y1):
+            t = ((y - y0 + 1) / (y1 - y0 + 1)) ** 2
+            fill.putpixel((x, y), tuple(round(a[i] + (b[i] - a[i]) * t) for i in range(3)))
+    patch = fill.crop((x0 - 4, y0 - 4, x1 + 4, y1 + 4)).filter(ImageFilter.GaussianBlur(3))
+    soft = Image.new('L', patch.size, 0)
+    ImageDraw.Draw(soft).rectangle((4, 4, patch.width - 5, patch.height - 5), fill=255)
+    im.paste(patch, (x0 - 4, y0 - 4), soft.filter(ImageFilter.GaussianBlur(2)))
+    save(im, 'backdrop-track', quality=84)
 
 
 def finish():
@@ -108,9 +194,10 @@ def main():
     flow_art()
     start_backdrop()
     finish()
-    for who in ('player', 'rival'):
+    for who in RUN_SHEETS:
         run_strip(who)
-    save(Image.open(FIGMA / 'backdrop-track.png').convert('RGB'), 'backdrop-track', quality=84)
+    gate()
+    race_backdrop()
     can = Image.open(FIGMA / 'sting-can.png').convert('RGBA')
     save(can, 'sting-can', quality=90)
 

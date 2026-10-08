@@ -87,11 +87,12 @@ function loadFinishArt(): Promise<FinishTextures | undefined> {
 async function loadTextures(): Promise<SceneTextures> {
   const svg = (file: string, resolution = 3) => ({ src: url(`sprites/${file}`), data: { resolution } });
   const load = (src: string | { src: string; data: { resolution: number } }) => Assets.load<Texture>(src);
-  const [backdrop, playerRun, rivalRun, can, face, innerRing, activeGlow, activeRing, perfectGlow, perfectRing, flash, empty, perfect, missed] =
+  const [backdrop, playerRun, rivalRun, gate, can, face, innerRing, activeGlow, activeRing, perfectGlow, perfectRing, flash, empty, perfect, missed] =
     await Promise.all([
       load(url('sprites/backdrop-track.webp')),
-      load(url('sprites/runner-max-back.webp')),
-      load(url('sprites/runner-rival-back.webp')),
+      load(url('sprites/runner-max-run.webp')),
+      load(url('sprites/runner-rival-run.webp')),
+      load(url('sprites/finish-gate.webp')),
       load(url('sprites/sting-can.webp')),
       load(svg('boost-face.svg')),
       load(svg('boost-inner-ring.svg')),
@@ -108,6 +109,7 @@ async function loadTextures(): Promise<SceneTextures> {
     backdrop,
     playerRun,
     rivalRun,
+    gate,
     can,
     face,
     innerRing,

@@ -39,3 +39,6 @@ perf-results
 
 # Branded client artwork supplied for concept 4 (poster, car). Local reference only.
 doc/concept-4/ref/client-*
+.vercel
+.env*
+!.env.example

@@ -57,57 +57,95 @@ def save(img, name, quality=86, lossless=False):
 
 
 RUN_SHEETS = {
-    # (sheet, columns, rows, cell order). A 4-cell sheet is half a stride (left foot down,
-    # right leg swinging; see prompts/*-run4.txt): the second half is the same four frames
-    # mirrored, with the original head kept so the hair does not flip sides.
-    'max': ('max-run4-a', 4, 1, (1, 2, 3, 4)),
-    'rival': ('rival-run4-b', 4, 1, (1, 2, 3, 4)),
+    # (sheet, columns, rows, cell order, anchor). A 4-cell sheet is half a stride (left foot
+    # down, right leg swinging; see prompts/*-run4.txt): the second half is the same four
+    # frames mirrored around the anchor, with the original head kept so the hair does not
+    # flip sides. The anchor is the line the body hangs on: 'head' when the art draws the
+    # head over the spine (the rival), 'stripe' for MAX, whose head leans by a different
+    # amount in every frame; there the white back stripe marks the spine and the head is
+    # re-seated over it, so the body does not wobble from frame to frame.
+    'max': ('max-trace-run4-c', 4, 1, (1, 2, 3, 4), 'stripe'),
+    'rival': ('rival-run4-b', 4, 1, (1, 2, 3, 4), 'head'),
 }
 NECK = 0.13            # share of the figure height from the head top down to the neck
 
 
-def mirror_body(cell):
-    """The cell mirrored around the head, with the unmirrored head and hair blended back in."""
-    box = bbox(cell)
-    hx = head_x(cell, box)
-    flipped = cell.transpose(Image.FLIP_LEFT_RIGHT)
-    out = Image.new('RGBA', cell.size)
-    out.paste(flipped, (round(2 * hx - cell.width), 0), flipped)
-    # Keep the original only in a window around the head that also covers where the
-    # mirrored hair would be, so raised arms at shoulder height stay mirrored. Above the
-    # neck the mirrored hair is cleared; the original head is laid over it and fades out
-    # into the mirrored collar, which stays solid.
+def stripe_x(cell, box):
+    """x of the white stripe down the middle of MAX's back (median over the upper torso)."""
+    px = cell.load()
     h = box[3] - box[1]
+    xs = []
+    for y in range(int(box[1] + 0.18 * h), int(box[1] + 0.42 * h)):
+        row = [x for x in range(box[0], box[2]) if px[x, y][3] > 200 and min(px[x, y][:3]) > 200]
+        if row:
+            xs.append(sum(row) / len(row))
+    xs.sort()
+    return xs[len(xs) // 2]
+
+
+def compose(cell, mirror, anchor):
+    """One frame, returned with its anchor x: the body (mirrored around the anchor for the
+    second half of the stride) with the original, unmirrored head laid over it, centred
+    on the anchor."""
+    box = bbox(cell)
+    h = box[3] - box[1]
+    hx = head_x(cell, box)
+    ax = stripe_x(cell, box) if anchor == 'stripe' else hx
+    shift = round(ax - hx)
+    if not mirror and not shift:
+        return cell, ax
+    body = cell
+    body_hx = hx
+    if mirror:
+        flipped = cell.transpose(Image.FLIP_LEFT_RIGHT)
+        body = Image.new('RGBA', cell.size)
+        body.paste(flipped, (round(2 * ax - cell.width), 0), flipped)
+        body_hx = 2 * ax - hx
+    # Above the neck, clear the body's own head and hair in a window around it and around
+    # the new head, but not wider: raised arms at shoulder height must stay. Then lay the
+    # original head over it, fading out into the collar, which stays solid.
     neck = round(box[1] + NECK * h)
     fade = 0.04 * h
     hb = bbox(cell.crop((0, box[1], cell.width, round(box[1] + 0.09 * h))))
     r = max(hx - hb[0], hb[2] - hx) + 6
-    edge = Image.new('L', (cell.width, 1), 0)
-    ImageDraw.Draw(edge).line((hx - r, 0, hx + r, 0), fill=255)
-    edge = edge.filter(ImageFilter.BoxBlur(3)).resize(cell.size)   # soft at the sides only
-    rows = Image.new('L', (1, cell.height), 0)
-    for y in range(cell.height):
-        rows.putpixel((0, y), 255 if y < neck else 0)
-    out.putalpha(ImageChops.multiply(out.getchannel('A'), ImageChops.invert(ImageChops.multiply(edge, rows.resize(cell.size)))))
-    for y in range(cell.height):
-        rows.putpixel((0, y), int(255 * max(0.0, min(1.0, (neck + fade - y) / fade))))
+
+    def window(left, right):
+        edge = Image.new('L', (cell.width, 1), 0)
+        ImageDraw.Draw(edge).line((left, 0, right, 0), fill=255)
+        return edge.filter(ImageFilter.BoxBlur(3)).resize(cell.size)   # soft at the sides only
+
+    def rows(f):
+        col = Image.new('L', (1, cell.height), 0)
+        for y in range(cell.height):
+            col.putpixel((0, y), int(255 * f(y)))
+        return col.resize(cell.size)
+
+    above = rows(lambda y: 1.0 if y < neck else 0.0)
+    clear = ImageChops.multiply(window(min(body_hx, ax) - r, max(body_hx, ax) + r), above)
+    out = body.copy()
+    out.putalpha(ImageChops.multiply(body.getchannel('A'), ImageChops.invert(clear)))
+    keep = ImageChops.multiply(window(hx - r, hx + r), rows(lambda y: max(0.0, min(1.0, (neck + fade - y) / fade))))
     head = cell.copy()
-    head.putalpha(ImageChops.multiply(cell.getchannel('A'), ImageChops.multiply(edge, rows.resize(cell.size))))
-    out.alpha_composite(head)
-    return out
+    head.putalpha(ImageChops.multiply(cell.getchannel('A'), keep))
+    moved = Image.new('RGBA', cell.size)
+    moved.paste(head, (shift, 0), head)
+    out.alpha_composite(moved)
+    return out, ax
 
 
 def run_strip(who):
     """8-frame run cycle as a 4x2 sheet. Frames share one scale, the head top on one line
-    and the head centred; the bounce comes from src/race/runner.ts."""
-    sheet, cols, rows, order = RUN_SHEETS[who]
+    and the anchor (see RUN_SHEETS) centred; the bounce comes from src/race/runner.ts."""
+    sheet, cols, rows, order, anchor = RUN_SHEETS[who]
     cells = [key_green(c) for c in grid(Image.open(GEN / f'{sheet}.png'), cols, rows)]
     cells = [cells[i - 1] for i in order]
+    framed = [compose(c, False, anchor) for c in cells]
     if len(cells) == 4:
-        cells += [mirror_body(c) for c in cells]
+        framed += [compose(c, True, anchor) for c in cells]
+    cells = [c for c, _ in framed]
+    anchors = [ax for _, ax in framed]
     boxes = [bbox(c) for c in cells]
-    heads = [head_x(c, b) for c, b in zip(cells, boxes)]
-    half_w = max(max(hx - b[0], b[2] - hx) for hx, b in zip(heads, boxes)) + PAD
+    half_w = max(max(ax - b[0], b[2] - ax) for ax, b in zip(anchors, boxes)) + PAD
     # The figure is measured to the planted foot in mid-stance (frame 2), which stands on
     # the road; a foot swung back towards the camera may reach lower than that.
     figure = boxes[1][3] - boxes[1][1]
@@ -116,9 +154,9 @@ def run_strip(who):
     scale = FRAME_H / figure
     fw, fh = round(half_w * 2 * scale), round(height * scale)
     strip = Image.new('RGBA', (fw * 4, fh * 2))
-    for i, (cell, hx, b) in enumerate(zip(cells, heads, boxes)):
+    for i, (cell, ax, b) in enumerate(zip(cells, anchors, boxes)):
         f = Image.new('RGBA', (int(half_w * 2), height))
-        f.alpha_composite(cell, (int(half_w - hx), PAD - b[1]))
+        f.alpha_composite(cell, (int(half_w - ax), PAD - b[1]))
         strip.alpha_composite(f.resize((fw, fh), Image.LANCZOS), ((i % 4) * fw, (i // 4) * fh))
     save(strip, f'runner-{who}-run', quality=88)
     print(f'  frame {fw}x{fh}, head top {round(PAD * scale)}px, ground {round((PAD + figure) * scale)}px from the frame top')

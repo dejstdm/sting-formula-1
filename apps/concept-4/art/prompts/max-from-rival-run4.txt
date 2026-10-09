@@ -1,0 +1,8 @@
+REDRAW the SECOND attached image (a sprite sheet of 4 run-cycle frames on chroma green) with a different character: the runner from the FIRST attached image.
+
+Keep EVERYTHING about the second image exactly: the canvas size and the 4-column layout, each figure's position, size and outline, the pose of every limb in every frame (arms, hands, legs, feet, soles), the torso and hip position, the head position. Trace it. Only the character's appearance changes.
+
+The character (from the first image): the same young woman, dark brown shoulder-length hair blowing back to the right, bright red full-body running suit with a thick white vertical stripe down the middle of the back, darker red side panels, white piping, dark red shoes. Seen from directly behind, no face visible. Her body is athletic and slim, with the SAME width of shoulders, waist and hips in all four frames, keeping the torso still and symmetric like the man in the second image; only the limbs and a little hair flutter change between frames.
+
+STYLE (must match the first image exactly): graphic poster illustration, bold flat vector shapes, hard-edged cel shading in dark red and black, clean white highlights, crisp black outlines. Palette for the runner: bright red #FF0000, dark red #AE2129, black, white, skin tones, dark brown hair.
+BACKGROUND: perfectly flat pure chroma green #00FF00 everywhere outside the figures, exactly like the second image. No floor, no shadow, no text, no logos, no grid lines. Never use green on the runner.

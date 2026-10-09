@@ -1417,6 +1417,9 @@ body:not(.room) #stage-frame i {
 #ui .lights .stl b:last-child {
   top: 52px;
 }
+#ui .lights .stl b {
+  transition: background 0.08s, box-shadow 0.3s ease-out;
+}
 #ui .lights .stl i.on b {
   background: #f00;
   box-shadow: 0 0 16px 2px rgba(255, 0, 0, 0.9);
@@ -1450,15 +1453,68 @@ body:not(.room) #stage-frame i {
   opacity: 0;
   filter: blur(120px);
 }
+/* GET. and SET. punch in (screens.ts restarts the animation for SET.). Only opacity and the
+   separate scale property animate, so the slanted transform stays. */
+#ui .lights .word {
+  animation: wordpop 0.4s cubic-bezier(0.2, 0.9, 0.3, 1.2) both;
+}
+@keyframes wordpop {
+  0% { opacity: 0; scale: 1.9; }
+  55% { opacity: 1; scale: 0.94; }
+  100% { opacity: 1; scale: 1; }
+}
+
+/* Lights out (Figma 08), about a second over the race as it starts: STING streaks in from
+   the right (the art's motion trails point that way), overshoots and settles with a squash,
+   a light streak flashes behind it, the red glow pops, the lights lift away, and STING
+   shoots off to the left as the runners get going. */
+#ui .lights .wordmark:not([hidden]) {
+  animation: stingin 1.05s cubic-bezier(0.15, 0.85, 0.3, 1) both;
+}
+@keyframes stingin {
+  0% { opacity: 0; translate: 115% 0; scale: 1.2 0.85; }
+  17% { opacity: 1; translate: -5% 0; scale: 1.07 0.96; }
+  30% { translate: 0 0; scale: 1 1; }
+  66% { opacity: 1; translate: -3% 0; scale: 1 1; animation-timing-function: cubic-bezier(0.55, 0, 0.9, 0.45); }
+  100% { opacity: 0; translate: -135% 0; scale: 1.15 0.9; }
+}
+#ui .lights .zap {
+  left: 0;
+  right: 0;
+  top: 297px;
+  height: 7px;
+  border-radius: 4px;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.95) 45%, #fff 55%, transparent);
+  box-shadow: 0 0 18px 4px rgba(255, 255, 255, 0.6);
+  opacity: 0;
+}
+#ui .lights.out .zap {
+  animation: zap 0.5s ease-out 0.13s both;
+}
+@keyframes zap {
+  0% { opacity: 1; transform: scaleX(0.05); }
+  100% { opacity: 0; transform: scaleX(1.5); }
+}
 #ui .lights.out .flash {
-  opacity: 0.5;
+  animation: flashpop 1s ease-out both;
 }
-/* Lights out: the wordmark flashes up, then the whole overlay fades off the running race. */
-#ui .layer.lights.out {
-  animation: lightsout 0.6s ease-in 0.45s forwards;
+@keyframes flashpop {
+  0% { opacity: 0; }
+  12% { opacity: 0.7; }
+  100% { opacity: 0; }
 }
-@keyframes lightsout {
-  to { opacity: 0; }
+#ui .lights.out .stl {
+  animation: stlout 0.45s ease-in 0.3s both;
+}
+@keyframes stlout {
+  to { opacity: 0; translate: 0 -48px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  #ui .lights .word,
+  #ui .lights .wordmark:not([hidden]),
+  #ui .lights.out .zap,
+  #ui .lights.out .flash,
+  #ui .lights.out .stl { animation-duration: 0.01s; animation-delay: 0s; }
 }
 
 /* ---- Results (Figma 18 to 21) ---- */

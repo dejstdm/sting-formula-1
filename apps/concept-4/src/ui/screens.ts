@@ -344,6 +344,7 @@ export class Screens {
       `
       <div class="flash"></div>
       <div class="stl">${cols}</div>
+      <i class="zap"></i>
       <h1 class="word">GET.</h1>
       <img class="wordmark" src="${BASE}sprites/wordmark.webp" alt="STING" hidden />`,
     );
@@ -363,6 +364,10 @@ export class Screens {
     cs[3].classList.remove('on');
     cs[4].classList.remove('on');
     word.textContent = 'SET.';
+    // Restart the punch-in animation for the new word.
+    word.style.animation = 'none';
+    void word.offsetWidth;
+    word.style.removeProperty('animation');
     this.audio.light();
     // A short random hold, as in F1, so the start can't be anticipated.
     await wait(550 + Math.random() * 500);

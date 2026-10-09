@@ -299,7 +299,10 @@ async function main() {
     }
     if (!params.has('skip')) {
       await screens.register();
-      build(); // picks up the first name
+      // The first name goes into the HUD. Rebuilding the scene for it would stall the
+      // screen change on a slow phone.
+      opts.playerName = (params.get('name') || screens.name).slice(0, 10);
+      scene!.setPlayerName(opts.playerName);
       await screens.charging();
       if ((await screens.howToPlay()) !== 'skip') await screens.rival();
     }

@@ -129,8 +129,27 @@ export class Screens {
     this.controls.style.top = raceHud ? `${this.topInset + 10}px` : `${this.frame.safeTop + 10}px`;
   }
 
+  /**
+   * Screen changes crossfade: a copy of the outgoing screen stays on top and fades out
+   * (style.css .ghost) while the new one comes in. Returns false when nothing was showing.
+   */
+  private leave(): boolean {
+    const old = this.layer;
+    // The start lights fade themselves out (.lights.out).
+    if (!old.firstElementChild || /\blights\b/.test(old.className)) return false;
+    const ghost = old.cloneNode(true) as HTMLElement;
+    ghost.classList.remove('enter', 'fresh');
+    ghost.classList.add('ghost');
+    ghost.removeAttribute('id');
+    ghost.querySelectorAll('[id]').forEach((e) => e.removeAttribute('id'));
+    old.after(ghost);
+    window.setTimeout(() => ghost.remove(), 400);
+    return true;
+  }
+
   /** Remove whatever screen is showing. */
   clear(): void {
+    this.leave();
     this.layer.replaceChildren();
     this.layer.className = 'layer';
     this.fit();
@@ -185,7 +204,10 @@ export class Screens {
   /** Show a screen and resolve with the id of the button that was pressed. */
   private show(cls: string, html: string): { done: Promise<string>; el: HTMLElement } {
     // `enter` animates the new content in (style.css); the countdown lights run their own sequence.
-    this.layer.className = `layer ${cls}${/\blights\b/.test(cls) ? '' : ' enter'}`;
+    // Over a previous screen the outgoing copy fades away; from the race (nothing showing)
+    // the new screen fades in itself (.fresh).
+    const fresh = !this.leave();
+    this.layer.className = `layer ${cls}${/\blights\b/.test(cls) ? '' : ' enter'}${fresh ? ' fresh' : ''}`;
     this.layer.innerHTML = html;
     this.layer.style.removeProperty('background');
     this.fit();
@@ -317,17 +339,16 @@ export class Screens {
    */
   async lights(): Promise<void> {
     const cols = Array.from({ length: 5 }, () => '<i><b></b><b></b></i>').join('');
-    const { el } = this.show(
+    this.show(
       'screen lights',
       `
       <div class="flash"></div>
-      <div class="rn rv"><i class="gs"><b></b></i><span><img src="${BASE}sprites/runner-rival-back.webp" alt="" /></span></div>
-      <div class="rn mx"><i class="gs"><b></b></i><span><img src="${BASE}sprites/runner-max-back.webp" alt="" /></span></div>
       <div class="stl">${cols}</div>
       <h1 class="word">GET.</h1>
       <img class="wordmark" src="${BASE}sprites/wordmark.webp" alt="STING" hidden />`,
     );
-    el.style.setProperty('--track', `url(${BASE}sprites/backdrop-track.webp)`);
+    // The overlay is transparent: the race scene underneath is the start grid (Figma 07),
+    // so at lights out the same runners simply start running.
     const cs = [...this.layer.querySelectorAll<HTMLElement>('.stl i')];
     const word = this.layer.querySelector<HTMLElement>('.word')!;
     const wait = (ms: number) => new Promise((r) => setTimeout(r, ms));
@@ -343,7 +364,8 @@ export class Screens {
     cs[4].classList.remove('on');
     word.textContent = 'SET.';
     this.audio.light();
-    await wait(800 + Math.random() * 900);
+    // A short random hold, as in F1, so the start can't be anticipated.
+    await wait(550 + Math.random() * 500);
     // "STING": lights out. The race starts here.
     cs[0].classList.remove('on');
     cs[1].classList.remove('on');
@@ -352,7 +374,10 @@ export class Screens {
     this.layer.querySelector<HTMLElement>('.wordmark')!.hidden = false;
     this.layer.classList.add('out');
     this.audio.go();
-    setTimeout(() => this.clear(), 900);
+    // The overlay fades out over the running race (style.css .lights.out), then goes.
+    setTimeout(() => {
+      if (this.layer.classList.contains('lights')) this.clear();
+    }, 1100);
   }
 
   /** Shared frame of the result screens (Figma 18 to 21): the Figma backdrop and brand tag. */

@@ -100,6 +100,18 @@ body {
 #ui .layer.over.enter {
   animation: fadein 0.35s ease-out both;
 }
+/* Crossfade (ui/screens.ts leave()): the outgoing screen's copy fades out on top. */
+#ui .layer.ghost.ghost {
+  pointer-events: none !important;
+  animation: ghostout 0.35s ease-out forwards;
+}
+@keyframes ghostout {
+  to { opacity: 0; }
+}
+/* A screen that comes up over the race fades in as a whole. */
+#ui .layer.fresh {
+  animation: fadein 0.35s ease-out both;
+}
 @keyframes enter {
   from {
     opacity: 0;
@@ -111,7 +123,10 @@ body {
 }
 @media (prefers-reduced-motion: reduce) {
   #ui :where(.layer.enter > *),
-  #ui .layer.over.enter { animation: none; }
+  #ui .layer.over.enter,
+  #ui .layer.fresh,
+  #ui .layer.ghost { animation: none; }
+  #ui .layer.ghost { display: none; }
 }
 #ui .layer.over {
   background: linear-gradient(rgba(0, 0, 0, 0.55), rgba(0, 0, 0, 0.88) 55%, #000);
@@ -1356,63 +1371,11 @@ body:not(.room) #stage-frame i {
 }
 
 /* 07a, 07b, 08: the countdown */
+/* Start lights (Figma 07, 08): a transparent overlay on the race scene's start grid. */
 #ui .layer.screen.lights {
   display: block;
   padding: 0;
-  background: var(--track) center / cover no-repeat #000;
-}
-#ui .lights .rn {
-  top: 302px;
-  width: 178.5px;
-  height: 238px;
-}
-#ui .lights .rn.rv {
-  left: 185.75px;
-}
-#ui .lights .rn.mx {
-  left: 10.75px;
-}
-#ui .lights .rn span {
-  position: absolute;
-  inset: 0;
-  overflow: hidden;
-}
-#ui .lights .rn img {
-  position: absolute;
-  max-width: none;
-}
-#ui .lights .rv img {
-  width: 120.32%;
-  height: 120.86%;
-  left: -10.16%;
-  top: -12.86%;
-}
-#ui .lights .mx img {
-  width: 118.4%;
-  height: 118.93%;
-  left: -9.2%;
-  top: -10%;
-}
-#ui .lights .rn .gs {
-  position: absolute;
-  left: 0;
-  top: 212.5px;
-  width: 178.5px;
-  height: 51px;
-}
-#ui .lights .rn .gs b {
-  position: absolute;
-  top: 11.9px;
-  width: 91.8px;
-  height: 13.6px;
-  background: #000;
-  clip-path: polygon(0 62%, 22.5% 7%, 55% 0, 100% 37.5%, 80% 85%, 40% 100%);
-}
-#ui .lights .rv .gs b {
-  left: 41.65px;
-}
-#ui .lights .mx .gs b {
-  left: 42.5px;
+  background: none;
 }
 #ui .lights > * {
   position: absolute;
@@ -1489,6 +1452,13 @@ body:not(.room) #stage-frame i {
 }
 #ui .lights.out .flash {
   opacity: 0.5;
+}
+/* Lights out: the wordmark flashes up, then the whole overlay fades off the running race. */
+#ui .layer.lights.out {
+  animation: lightsout 0.6s ease-in 0.45s forwards;
+}
+@keyframes lightsout {
+  to { opacity: 0; }
 }
 
 /* ---- Results (Figma 18 to 21) ---- */

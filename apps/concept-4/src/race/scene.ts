@@ -28,7 +28,16 @@ export const PACE = {
 } as const;
 
 /** How far the rival runs by finishAt, in dash periods. */
-const RACE_LENGTH = PACE.rivalSpeed * RULES.finishAt;
+/**
+ * At lights out the runners and the road speed up from standing over LAUNCH_SECONDS
+ * (ease-out cubic), and the HUD fades in over INTRO_SECONDS: the start grid (Figma 07)
+ * has no HUD and no bottom fade, the race (Figma 09) has both.
+ */
+const LAUNCH_SECONDS = 0.7;
+const INTRO_SECONDS = 0.5;
+const easeOut = (x: number) => 1 - (1 - Math.min(1, Math.max(0, x))) ** 3;
+/** Rival distance at finishAt: full pace minus what the launch loses (a quarter of LAUNCH_SECONDS at full pace). */
+const RACE_LENGTH = PACE.rivalSpeed * (RULES.finishAt - LAUNCH_SECONDS / 4);
 
 export interface SceneTextures extends BoostButtonTextures, HudTextures {
   backdrop: Texture;
@@ -126,6 +135,10 @@ export class RaceScene extends Container {
 
   // Race state
   private state: RaceState = 'armed';
+  private fade!: Sprite;
+  private buttonY = 0;
+  /** 0 on the start grid (no HUD), 1 once the race is under way. */
+  private intro = 0;
   private time = 0;
   private energy = 1;
   private shownEnergy = 1;
@@ -164,7 +177,7 @@ export class RaceScene extends Container {
     this.lines = new SpeedLines(renderer, W, H);
     this.lines.setCentre(this.vp.x, this.vp.y);
 
-    const fade = new Sprite(fadeTexture());
+    const fade = (this.fade = new Sprite(fadeTexture()));
     fade.position.set(0, H - 342);
     fade.width = W;
     fade.height = 342;
@@ -183,6 +196,7 @@ export class RaceScene extends Container {
     this.hudBottom = new HudBottom(W, H - Math.max(0, o.safeBottom - 12), t);
     this.button = new BoostButton(t);
     this.button.position.set(W / 2, H - Math.max(0, o.safeBottom - 12) - 110);
+    this.buttonY = this.button.y;
     this.button.on('pointerdown', () => this.tap());
     this.sparks.position.copyFrom(this.button.position);
     this.banner.position.set(W / 2, this.hudTop.height_ + 80);
@@ -193,6 +207,8 @@ export class RaceScene extends Container {
     this.reset();
     // Looping runs (tests, screenshots) start at once; the game waits for start().
     if (o.loop) this.state = 'racing';
+    this.intro = o.loop ? 1 : 0;
+    this.applyIntro();
   }
 
   /** Hands over the finish pictures once they have loaded, and uploads them to the GPU off the race's critical path. */
@@ -253,6 +269,11 @@ export class RaceScene extends Container {
     this.button.setState('default');
   }
 
+  /** The name typed on the registration screen, without rebuilding the scene. */
+  setPlayerName(name: string): void {
+    this.hudTop.setName(name);
+  }
+
   /** Lights out: the clock starts. */
   start(): void {
     this.reset();
@@ -309,7 +330,9 @@ export class RaceScene extends Container {
 
   update(dt: number): void {
     if (this.state === 'armed') {
-      // Waiting on the grid: runners stand ready, the road is still.
+      // Waiting on the grid: runners stand ready, the road is still, no HUD.
+      this.intro = 0;
+      this.applyIntro();
       this.placeRunners(0, 0, dt);
       this.placeGate(0);
       this.hudBottom.setEnergy(1);
@@ -321,6 +344,10 @@ export class RaceScene extends Container {
     }
 
     this.time += dt;
+    if (this.intro < 1) {
+      this.intro = Math.min(1, this.intro + dt / INTRO_SECONDS);
+      this.applyIntro();
+    }
     const won = this.result?.won ?? false;
     const sequence = won && this.hasFinishArt;
     if (this.time >= RULES.finishAt + (sequence ? FINISH.end : won ? 1.5 : FINISH.endLose)) {
@@ -383,8 +410,9 @@ export class RaceScene extends Container {
       }
     }
     this.coast = this.crossed ? Math.max(0, 1 - (t - RULES.finishAt - 0.4) / 1.3) : 1;
-    const dPlayer = vPlayer * this.coast * dt;
-    const dRival = PACE.rivalSpeed * this.coast * dt;
+    const launch = easeOut(this.time / LAUNCH_SECONDS);
+    const dPlayer = vPlayer * this.coast * launch * dt;
+    const dRival = PACE.rivalSpeed * this.coast * launch * dt;
     this.playerDist += dPlayer;
     this.rivalDist += dRival;
     this.road.advance(dPlayer);
@@ -394,12 +422,21 @@ export class RaceScene extends Container {
     this.runFinish(t, dt, won, sequence);
     this.applyEffects(dt);
 
-    this.o.audio?.drive(this.coast * (vPlayer / PACE.rivalSpeed), this.energy);
+    this.o.audio?.drive(this.coast * launch * (vPlayer / PACE.rivalSpeed), this.energy);
     const length = RACE_LENGTH;
     // Figma screens 16 and 17 show 0:15 on the clock, screens 14 and 15 show 0:13.
     const clock = this.finish.picture >= 1 ? 15 : Math.min(t, RULES.finishAt);
     this.hudTop.update(clock, Math.min(1, this.playerDist / length), Math.min(1, this.rivalDist / length));
     this.hudBottom.setEnergy(this.shownEnergy);
+  }
+
+  /** HUD and bottom fade in, sliding a little from the screen edges. */
+  private applyIntro(): void {
+    const e = easeOut(this.intro);
+    this.hudTop.alpha = this.hudBottom.alpha = this.button.alpha = this.fade.alpha = e;
+    this.hudTop.y = -24 * (1 - e);
+    this.hudBottom.y = 40 * (1 - e);
+    this.button.y = this.buttonY + 40 * (1 - e);
   }
 
   private placeRunners(dPlayer: number, dRival: number, dt: number): void {

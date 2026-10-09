@@ -25,11 +25,17 @@ export class HudTop extends Container {
   readonly height_: number;
   private bg = new Graphics();
   private timer: Text;
+  private nameText: Text;
   private shownSecond = -1;
   private markerMax = new Graphics().circle(0, 0, 7).fill(RED);
   private markerRival = new Graphics().circle(0, 0, 7).fill(0xffffff);
   private trackX = 20;
   private trackW = 335;
+
+  /** The player's name, top left (from the registration screen). */
+  setName(playerName: string): void {
+    this.nameText.text = playerName.toUpperCase();
+  }
 
   constructor(width: number, topInset: number, playerName: string) {
     super();
@@ -37,7 +43,7 @@ export class HudTop extends Container {
     this.height_ = pad + 24.4 + 12 + 8 + 16;
     this.bg.rect(0, 0, width, this.height_).fill({ color: 0x000000, alpha: 0.82 });
     const nameY = pad + 12.2;
-    const max = molot(playerName.toUpperCase(), 22, { fill: RED });
+    const max = (this.nameText = molot(playerName.toUpperCase(), 22, { fill: RED }));
     max.anchor.set(0, 0.5);
     max.position.set(28.9, nameY);
     const rival = molot('RIVAL', 22);

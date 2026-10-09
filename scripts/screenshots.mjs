@@ -14,6 +14,8 @@ const shots = [
   { id: 'concept-1', query: 'skip&auto=PPP&name=MAX&capture&webgl&fixedres&q=mid' },
   { id: 'concept-2', query: 'skip&auto=PPP&name=MAX&capture' },
   { id: 'concept-3', query: 'skip&auto=PPP&name=MAX&capture&fixedres' },
+  // Concept 4 draws everything in WebGL; it flags each Boost result on <body>.
+  { id: 'concept-4', query: 'auto=PPP&name=MAX', ready: 'body[data-boost="perfect"]', settle: 400 },
 ].filter((shot) => process.argv.length < 3 || process.argv.slice(2).includes(shot.id));
 
 function chromePath() {
@@ -42,9 +44,10 @@ async function reachable(url) {
 }
 
 function startPreview() {
+  // Run vite's own entry point: killing an npx wrapper would leave the server running.
   const child = spawn(
-    'npx',
-    ['vite', 'preview', '--config', 'vite.preview.config.ts', '--host', '127.0.0.1', '--port', '4173', '--strictPort'],
+    process.execPath,
+    [path.join(root, 'node_modules/vite/bin/vite.js'), 'preview', '--config', 'vite.preview.config.ts', '--host', '127.0.0.1', '--port', '4173', '--strictPort'],
     { cwd: root, stdio: 'inherit' },
   );
   return child;
@@ -81,7 +84,7 @@ if (!executablePath) {
   process.exit(1);
 }
 
-const conceptsReady = ['concept-1', 'concept-2', 'concept-3'].every((id) =>
+const conceptsReady = shots.map((s) => s.id).every((id) =>
   existsSync(path.join(root, 'dist', id, 'index.html')),
 );
 if (!conceptsReady) {
@@ -118,7 +121,8 @@ try {
     await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 60_000 });
     // SwiftShader takes about a minute to reach the first Boost. The label
     // fades in under a second, so freeze it the moment the class appears.
-    await page.waitForSelector('.fb.perfect.play', { state: 'attached', timeout: 180_000 });
+    await page.waitForSelector(shot.ready ?? '.fb.perfect.play', { state: 'attached', timeout: 180_000 });
+    if (shot.settle) await page.waitForTimeout(shot.settle);
     await page.evaluate(() => {
       window.requestAnimationFrame = () => 0;
       for (const el of document.querySelectorAll('.fb.play')) {

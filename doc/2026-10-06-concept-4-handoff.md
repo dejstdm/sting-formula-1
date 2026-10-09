@@ -1,6 +1,8 @@
 # Concept 4: handoff for the next session
 
-2026-10-06. Start here when building concept 4. This file collects the technology research from another agent, Dejan's decisions, the designer's art prompts and reference images, and the performance lessons from concept 3. No concept 4 code exists yet.
+2026-10-06. Start here when building concept 4. This file collects the technology research from another agent, Dejan's decisions, the designer's art prompts and reference images, and the performance lessons from concept 3.
+
+**Status:** step 1 (the race scene) is built. See `doc/2026-10-06-concept-4-step-1.md` for what exists, the open rule questions and the performance results.
 
 ## Start of the next session
 

@@ -1,29 +1,27 @@
-import '@fontsource/anton/400.css';
-import '@fontsource/barlow-condensed/600.css';
-import '@fontsource/barlow-condensed/700.css';
+import qrcode from 'qrcode-generator';
 import './style.css';
-import { concepts } from './concepts.js';
+import { earlier } from './concepts.js';
 
-const root = document.querySelector('#cards');
+// The QR code opens the device test on whatever site this page came from: the test
+// deployment, or a local preview opened on the network address.
+const qr = qrcode(0, 'M');
+qr.addData(new URL('/concept-4/?debug', location.href).href);
+qr.make();
+document.querySelector('#qr').innerHTML = qr.createSvgTag({ cellSize: 4, margin: 4, scalable: true });
 
-for (const c of concepts) {
-  const card = document.createElement('article');
-  card.className = 'card';
+const root = document.querySelector('#earlier');
+
+for (const c of earlier) {
+  const card = document.createElement('a');
+  card.className = 'mini';
+  card.href = `/${c.id}/`;
   card.innerHTML = `
-    <a class="phone" href="/${c.id}/">
-      <img src="${c.shot}" width="390" height="844" alt="${c.name} during a Perfect Boost" />
-    </a>
-    <h2>${c.name}</h2>
-    <p class="pitch">${c.pitch}</p>
-    <h3>How it’s made</h3>
-    <p>${c.how}</p>
-    <h3>What it uses</h3>
-    <p>${c.uses}</p>
-    <p class="meta"><b>${c.size}</b> over the wire. ${c.status}</p>
-    <p class="actions">
-      <a class="play" href="/${c.id}/">Play</a>
-      <a class="as" href="/${c.id}/?name=MAX">Play as MAX</a>
-    </p>
+    <img src="${c.shot}" width="390" height="844" alt="" loading="lazy" />
+    <span class="mini__text">
+      <b>${c.name}</b>
+      <span>${c.pitch}</span>
+      <small>${c.uses}</small>
+    </span>
   `;
   root.append(card);
 }

@@ -1,0 +1,91 @@
+<svg preserveAspectRatio="none" overflow="visible" style="display: block;" width="375" height="812" viewBox="0 0 375 812" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="backdrop__placeholder" clip-path="url(#clip0_0_205)">
+<rect id="backdrop__sky" width="375" height="330" fill="url(#paint0_linear_0_205)"/>
+<circle id="backdrop__red-sun" cx="263" cy="193" r="13" fill="#FF0000"/>
+<rect id="backdrop__skyscraper" y="120" width="70" height="210" fill="#141414"/>
+<rect id="backdrop__skyscraper_2" x="55" y="160" width="60" height="170" fill="#242424"/>
+<rect id="backdrop__skyscraper_3" x="100" y="220" width="48" height="110" fill="#1C1C1C"/>
+<rect id="backdrop__skyscraper_4" x="300" y="110" width="75" height="220" fill="#141414"/>
+<rect id="backdrop__skyscraper_5" x="255" y="170" width="55" height="160" fill="#262626"/>
+<rect id="backdrop__skyscraper_6" x="225" y="230" width="40" height="100" fill="#1C1C1C"/>
+<path id="backdrop__road" d="M-60 812L175 300H200L435 812H-60Z" fill="#151515"/>
+<path id="backdrop__kerb-l" d="M-60 812H-130L-75.73 719.84H-17.7L-60 812Z" fill="#FF0000"/>
+<path id="backdrop__kerb-r" d="M435 812H505L450.73 719.84H392.7L435 812Z" fill="#FF0000"/>
+<path id="backdrop__centre-dash" d="M180.5 812H194.5L193.348 719.84H181.652L180.5 812Z" fill="white" fill-opacity="0.85"/>
+<path id="backdrop__kerb-l_2" d="M-17.7 719.84H-75.73L-31.2286 644.269H16.986L-17.7 719.84Z" fill="white"/>
+<path id="backdrop__kerb-r_2" d="M392.7 719.84H450.73L406.229 644.269H358.014L392.7 719.84Z" fill="white"/>
+<path id="backdrop__kerb-l_3" d="M16.986 644.269H-31.2286L5.26255 582.3H45.4285L16.986 644.269Z" fill="#FF0000"/>
+<path id="backdrop__kerb-r_3" d="M358.014 644.269H406.229L369.737 582.3H329.571L358.014 644.269Z" fill="#FF0000"/>
+<path id="backdrop__centre-dash_2" d="M182.597 644.269H192.403L191.629 582.3H183.371L182.597 644.269Z" fill="white" fill-opacity="0.85"/>
+<path id="backdrop__kerb-l_4" d="M45.4285 582.3H5.26255L35.1853 531.486H68.7514L45.4285 582.3Z" fill="white"/>
+<path id="backdrop__kerb-r_4" d="M329.571 582.3H369.737L339.815 531.486H306.249L329.571 582.3Z" fill="white"/>
+<path id="backdrop__kerb-l_5" d="M68.7514 531.486H35.1853L59.7219 489.819H87.8761L68.7514 531.486Z" fill="#FF0000"/>
+<path id="backdrop__kerb-r_5" d="M306.249 531.486H339.815L315.278 489.819H287.124L306.249 531.486Z" fill="#FF0000"/>
+<path id="backdrop__centre-dash_3" d="M184.006 531.486H190.994L190.473 489.819H184.527L184.006 531.486Z" fill="white" fill-opacity="0.85"/>
+<path id="backdrop__kerb-l_6" d="M87.8761 489.819H59.7219L79.842 455.651H103.558L87.8761 489.819Z" fill="white"/>
+<path id="backdrop__kerb-r_6" d="M287.124 489.819H315.278L295.158 455.651H271.442L287.124 489.819Z" fill="white"/>
+<path id="backdrop__kerb-l_7" d="M103.558 455.651H79.842L96.3404 427.634H116.418L103.558 455.651Z" fill="#FF0000"/>
+<path id="backdrop__kerb-r_7" d="M271.442 455.651H295.158L278.66 427.634H258.582L271.442 455.651Z" fill="#FF0000"/>
+<path id="backdrop__centre-dash_4" d="M184.954 455.651H190.046L189.695 427.634H185.305L184.954 455.651Z" fill="white" fill-opacity="0.85"/>
+<path id="backdrop__kerb-l_8" d="M116.418 427.634H96.3404L109.869 404.66H126.963L116.418 427.634Z" fill="white"/>
+<path id="backdrop__kerb-r_8" d="M258.582 427.634H278.66L265.131 404.66H248.037L258.582 427.634Z" fill="white"/>
+<path id="backdrop__kerb-l_9" d="M126.963 404.66H109.869L120.963 385.821H135.609L126.963 404.66Z" fill="#FF0000"/>
+<path id="backdrop__kerb-r_9" d="M248.037 404.66H265.131L254.037 385.821H239.391L248.037 404.66Z" fill="#FF0000"/>
+<path id="backdrop__centre-dash_5" d="M185.592 404.66H189.408L189.173 385.821H185.827L185.592 404.66Z" fill="white" fill-opacity="0.85"/>
+<path id="backdrop__kerb-l_10" d="M135.609 385.821H120.963L130.059 370.373H142.7L135.609 385.821Z" fill="white"/>
+<path id="backdrop__kerb-r_10" d="M239.391 385.821H254.037L244.941 370.373H232.3L239.391 385.821Z" fill="white"/>
+<path id="backdrop__kerb-l_11" d="M142.7 370.373H130.059L137.519 357.706H148.514L142.7 370.373Z" fill="#FF0000"/>
+<path id="backdrop__kerb-r_11" d="M232.3 370.373H244.941L237.481 357.706H226.486L232.3 370.373Z" fill="#FF0000"/>
+<path id="backdrop__centre-dash_6" d="M186.02 370.373H188.98L188.821 357.706H186.179L186.02 370.373Z" fill="white" fill-opacity="0.85"/>
+<path id="backdrop__kerb-l_12" d="M148.514 357.706H137.519L143.635 347.319H153.281L148.514 357.706Z" fill="white"/>
+<path id="backdrop__kerb-r_12" d="M226.486 357.706H237.481L231.365 347.319H221.719L226.486 357.706Z" fill="white"/>
+<path id="backdrop__kerb-l_13" d="M153.281 347.319H143.635L148.651 338.802H157.191L153.281 347.319Z" fill="#FF0000"/>
+<path id="backdrop__kerb-r_13" d="M221.719 347.319H231.365L226.349 338.802H217.809L221.719 347.319Z" fill="#FF0000"/>
+<path id="backdrop__centre-dash_7" d="M186.309 347.319H188.691L188.585 338.802H186.415L186.309 347.319Z" fill="white" fill-opacity="0.85"/>
+<path id="backdrop__kerb-l_14" d="M157.191 338.802H148.651L152.764 331.817H160.396L157.191 338.802Z" fill="white"/>
+<path id="backdrop__kerb-r_14" d="M217.809 338.802H226.349L222.236 331.817H214.604L217.809 338.802Z" fill="white"/>
+<path id="backdrop__kerb-l_15" d="M160.396 331.817H152.764L156.136 326.09H163.025L160.396 331.817Z" fill="#FF0000"/>
+<path id="backdrop__kerb-r_15" d="M214.604 331.817H222.236L218.864 326.09H211.975L214.604 331.817Z" fill="#FF0000"/>
+<path id="backdrop__centre-dash_8" d="M186.502 331.817H188.498L188.426 326.09H186.574L186.502 331.817Z" fill="white" fill-opacity="0.85"/>
+<path id="backdrop__kerb-l_16" d="M163.025 326.09H156.136L158.902 321.394H165.18L163.025 326.09Z" fill="white"/>
+<path id="backdrop__kerb-r_16" d="M211.975 326.09H218.864L216.098 321.394H209.82L211.975 326.09Z" fill="white"/>
+<path id="backdrop__kerb-l_17" d="M165.18 321.394H158.902L161.169 317.543H166.948L165.18 321.394Z" fill="#FF0000"/>
+<path id="backdrop__kerb-r_17" d="M209.819 321.394H216.098L213.831 317.543H208.052L209.819 321.394Z" fill="#FF0000"/>
+<path id="backdrop__centre-dash_9" d="M186.633 321.394H188.367L188.319 317.543H186.681L186.633 321.394Z" fill="white" fill-opacity="0.85"/>
+<path id="backdrop__kerb-l_18" d="M166.948 317.543H161.169L163.029 314.385H168.397L166.948 317.543Z" fill="white"/>
+<path id="backdrop__kerb-r_18" d="M208.052 317.543H213.831L211.971 314.385H206.603L208.052 317.543Z" fill="white"/>
+<path id="backdrop__speed-streak" d="M40 812L181.5 330H182.5L46 812H40Z" fill="white" fill-opacity="0.18"/>
+<path id="backdrop__speed-streak_2" d="M95 812L183.9 330H184.9L101 812H95Z" fill="#AE2129" fill-opacity="0.18"/>
+<path id="backdrop__speed-streak_3" d="M150 812L186.3 330H187.3L156 812H150Z" fill="white" fill-opacity="0.18"/>
+<path id="backdrop__speed-streak_4" d="M205 812L188.7 330H189.7L211 812H205Z" fill="#AE2129" fill-opacity="0.18"/>
+<path id="backdrop__speed-streak_5" d="M260 812L191.1 330H192.1L266 812H260Z" fill="white" fill-opacity="0.18"/>
+<path id="backdrop__speed-streak_6" d="M315 812L193.5 330H194.5L321 812H315Z" fill="#AE2129" fill-opacity="0.18"/>
+<rect id="backdrop__finish-post-l" x="170" y="270" width="3" height="32" fill="white"/>
+<rect id="backdrop__finish-post-r" x="202" y="270" width="3" height="32" fill="white"/>
+<rect id="backdrop__finish-check" x="170" y="266" width="4.4" height="4" fill="white"/>
+<rect id="backdrop__finish-check_2" x="170" y="270" width="4.4" height="4" fill="black"/>
+<rect id="backdrop__finish-check_3" x="174.4" y="266" width="4.4" height="4" fill="black"/>
+<rect id="backdrop__finish-check_4" x="174.4" y="270" width="4.4" height="4" fill="white"/>
+<rect id="backdrop__finish-check_5" x="178.8" y="266" width="4.4" height="4" fill="white"/>
+<rect id="backdrop__finish-check_6" x="178.8" y="270" width="4.4" height="4" fill="black"/>
+<rect id="backdrop__finish-check_7" x="183.2" y="266" width="4.4" height="4" fill="black"/>
+<rect id="backdrop__finish-check_8" x="183.2" y="270" width="4.4" height="4" fill="white"/>
+<rect id="backdrop__finish-check_9" x="187.6" y="266" width="4.4" height="4" fill="white"/>
+<rect id="backdrop__finish-check_10" x="187.6" y="270" width="4.4" height="4" fill="black"/>
+<rect id="backdrop__finish-check_11" x="192" y="266" width="4.4" height="4" fill="black"/>
+<rect id="backdrop__finish-check_12" x="192" y="270" width="4.4" height="4" fill="white"/>
+<rect id="backdrop__finish-check_13" x="196.4" y="266" width="4.4" height="4" fill="white"/>
+<rect id="backdrop__finish-check_14" x="196.4" y="270" width="4.4" height="4" fill="black"/>
+<rect id="backdrop__finish-check_15" x="200.8" y="266" width="4.4" height="4" fill="black"/>
+<rect id="backdrop__finish-check_16" x="200.8" y="270" width="4.4" height="4" fill="white"/>
+</g>
+<defs>
+<linearGradient id="paint0_linear_0_205" x1="187.5" y1="0" x2="187.5" y2="330" gradientUnits="userSpaceOnUse">
+<stop stop-color="#9A9A9A"/>
+<stop offset="1" stop-color="#1A1A1A"/>
+</linearGradient>
+<clipPath id="clip0_0_205">
+<rect width="375" height="812" fill="white"/>
+</clipPath>
+</defs>
+</svg>

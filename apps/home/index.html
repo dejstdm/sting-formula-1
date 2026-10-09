@@ -2,26 +2,109 @@
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="theme-color" content="#07060a" />
-    <meta name="description" content="Three prototype builds of STING BOOST, a 15-second race against a rival." />
-    <title>STING BOOST · concepts</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#000000" />
+    <meta name="description" content="Test the Sting Boost race game on your phone. It takes about a minute and the results are sent automatically." />
+    <meta property="og:title" content="Sting Boost · test the game on your phone" />
+    <meta property="og:description" content="A 15-second race against a rival. Run the one-minute device test on your phone and help us see how it performs." />
+    <meta property="og:image" content="/shots/concept-4.webp" />
+    <title>Sting Boost · test the game on your phone</title>
     <link rel="icon" type="image/png" href="/favicon.png" />
     <script>
       const q = new URLSearchParams(location.search);
       if (q.has('name') || q.has('auto')) location.replace('/concept-1/' + location.search + location.hash);
     </script>
   </head>
-  <body>
+  <body class="home">
     <header class="site">
-      <img class="wordmark" src="/sting-logo.webp" alt="Sting" />
-      <p class="tag">STING BOOST · GAME CONCEPTS</p>
+      <a href="/" aria-label="Sting Boost home"><img class="wordmark" src="/sting-logo.webp" alt="Sting" /></a>
+      <nav class="menu" aria-label="Pages">
+        <a href="/" aria-current="page">Test</a>
+        <a href="/concept-4/">Play</a>
+        <a href="/results/">Results</a>
+      </nav>
     </header>
-    <p class="lede">Three prototypes of the same race from the deck. About 15 seconds, one rival, three Boosts. Nothing is saved and nothing is won but the race.</p>
+
     <main>
-      <div id="cards" class="cards"></div>
+      <section class="hero">
+        <div class="hero__copy">
+          <p class="eyebrow">Get. Set. Sting.</p>
+          <h1>Test the game on your&nbsp;phone</h1>
+          <p class="lede">Sting Boost is a 15-second race against a rival. Tap the Boost button at the right moment, three times, and beat him to the line. We need to see how it runs on as many different phones as possible, old ones too.</p>
+          <div class="cta-row">
+            <a class="btn btn--primary" href="/concept-4/?debug">Start the device test</a>
+            <a class="btn btn--secondary" href="/concept-4/">Just play</a>
+          </div>
+          <p class="fine">Takes about a minute. We record the phone name, its screen and graphics chip, and how smoothly the game ran. Nothing about you.</p>
+          <aside class="qr" aria-label="Open the test on your phone">
+            <span id="qr" class="qr__code" role="img" aria-label="QR code for the device test"></span>
+            <p><b>On a computer?</b> Scan this with your phone camera to open the test there.</p>
+          </aside>
+          <a class="results-link results-link--hero" href="/results/">See how every phone did so far <span aria-hidden="true">→</span></a>
+        </div>
+        <a class="hero__phone" href="/concept-4/" aria-label="Play the game">
+          <img src="/shots/concept-4.webp" width="390" height="844" alt="The race: the player and the rival running down the track, with the Boost button below" />
+        </a>
+      </section>
+
+      <section class="steps" aria-labelledby="steps-title">
+        <h2 id="steps-title">How the test works</h2>
+        <ol>
+          <li>
+            <h3>Open it on your phone</h3>
+            <p>Use the button above, or scan the QR code from a computer. Any phone helps; older and cheaper ones help most.</p>
+          </li>
+          <li>
+            <h3>Check your phone’s name</h3>
+            <p>We fill in a guess. Make sure it says the model and system, for example <i>iPhone 11, iOS 17</i> or <i>Galaxy A52, Android 13</i>. iPhones never tell us the model, so type it in (Settings › General › About).</p>
+          </li>
+          <li>
+            <h3>Tap AUTO TEST ×3 and let go</h3>
+            <p>The game races three times by itself, so every phone does the same work. Keep the screen on and don’t touch it for about a minute.</p>
+          </li>
+          <li>
+            <h3>Done. Results send themselves</h3>
+            <p>When the races finish, the numbers go to us automatically. If sending fails, tap <b>SEND</b>. Then tap <b>PLAY</b> and have a go yourself.</p>
+          </li>
+        </ol>
+        <details class="extra">
+          <summary>
+            <span class="extra__tag">Optional</span>
+            <span class="extra__title">Got a few more minutes? Two extra tests</span>
+            <span class="extra__chevron" aria-hidden="true"></span>
+          </summary>
+          <div class="extra__cards">
+            <article class="xcard">
+              <p class="xcard__time">+1 min</p>
+              <h3>Battery saver</h3>
+              <ol>
+                <li>Turn on Low Power Mode (iPhone) or Battery Saver (Android) in your phone’s settings.</li>
+                <li>On the test screen, tick <b>Battery saver / low power mode is ON</b>.</li>
+                <li>Tap <b>AUTO TEST ×3</b> again. Turn the mode off afterwards.</li>
+              </ol>
+            </article>
+            <article class="xcard">
+              <p class="xcard__time">+3 min</p>
+              <h3>Stress ×10</h3>
+              <ol>
+                <li>Tap <b>STRESS ×10</b> on the test screen.</li>
+                <li>Ten races run back to back. Keep the screen on and don’t touch it.</li>
+                <li>It shows whether your phone slows down once it gets warm.</li>
+              </ol>
+            </article>
+          </div>
+        </details>
+        <a class="results-link" href="/results/">See how every phone did so far <span aria-hidden="true">→</span></a>
+      </section>
+
+      <section class="earlier" aria-labelledby="earlier-title">
+        <h2 id="earlier-title">Earlier prototypes</h2>
+        <p class="earlier__note">Before the Figma design was finished, we built three quick versions of the same race to try different techniques. They are parked and are not part of this test. You can still open them.</p>
+        <div id="earlier" class="earlier__list"></div>
+      </section>
     </main>
-    <p class="foot">Prototype · no backend, no rewards, no licensed F1 assets</p>
+
+    <footer class="foot">Prototype for internal testing · rewards in the game are a preview</footer>
     <script type="module" src="/src/main.js"></script>
   </body>
 </html>

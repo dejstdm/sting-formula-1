@@ -7,11 +7,10 @@
     "dev": "vite --host --port 5176",
     "build": "vite build"
   },
-  "dependencies": {
-    "@fontsource/anton": "^5.3.0",
-    "@fontsource/barlow-condensed": "^5.3.0"
-  },
   "devDependencies": {
     "vite": "^8.3.1"
+  },
+  "dependencies": {
+    "qrcode-generator": "^2.0.4"
   }
 }

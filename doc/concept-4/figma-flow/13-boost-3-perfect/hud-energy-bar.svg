@@ -1,0 +1,6 @@
+<svg preserveAspectRatio="none" overflow="visible" style="display: block;" width="36" height="120" viewBox="0 0 36 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="hud__energy-bar">
+<path id="Energy track" opacity="0.35" d="M14 0H36L22 120H0L14 0Z" fill="#AE2129"/>
+<path id="Energy fill" d="M14 0H36L22 120H0L14 0Z" fill="#FF0000"/>
+</g>
+</svg>

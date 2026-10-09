@@ -1,0 +1,6 @@
+<svg preserveAspectRatio="none" overflow="visible" style="display: block;" width="52.2" height="6" viewBox="0 0 52.2 6" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="pagination">
+<path id="pagination__dot" opacity="0.35" d="M2.1 0H16.1L14 6H0L2.1 0Z" fill="white"/>
+<path id="pagination__dot--active" d="M24.2 0H52.2L50.1 6H22.1L24.2 0Z" fill="white"/>
+</g>
+</svg>

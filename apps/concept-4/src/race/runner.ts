@@ -22,6 +22,8 @@ const RACE_PACE = 2.6;
  * (Linear would make the legs spin during a Boost.)
  */
 const CADENCE_EXP = 0.35;
+/** Extra cadence at full Boost: the legs turn this much faster (0.85 = 85%), then ease back. */
+const BOOST_CADENCE = 0.85;
 /** The art is aligned on the head, so all vertical motion comes from here. Shares of the figure height. */
 const BOUNCE = 0.028;
 /** Sideways shift over the foot that carries the weight, and the matching roll (radians). */
@@ -56,11 +58,14 @@ export class Runner extends Container {
     this.addChild(this.shadow, this.body);
   }
 
-  /** Feet at (x, y), figure `height` design units tall, after covering `dz` dash periods in `dt` seconds. */
-  update(x: number, y: number, height: number, dz: number, dt: number): void {
+  /**
+   * Feet at (x, y), figure `height` design units tall, after covering `dz` dash periods in
+   * `dt` seconds. `boost` (0 to 1) is the Boost leg drive: a sprint burst of faster strides.
+   */
+  update(x: number, y: number, height: number, dz: number, dt: number, boost = 0): void {
     const speed = dt > 0 ? dz / dt / RACE_PACE : 0;
     this.stride += ((speed > 0.05 ? 1 : 0) - this.stride) * Math.min(1, dt * 6);
-    if (speed > 0) this.phase = (this.phase + dt * CADENCE * Math.pow(speed, CADENCE_EXP)) % 1;
+    if (speed > 0) this.phase = (this.phase + dt * CADENCE * Math.pow(speed, CADENCE_EXP) * (1 + BOOST_CADENCE * boost)) % 1;
     const n = this.frames.length;
     this.body.texture = this.frames[Math.floor(this.phase * n) % n];
 

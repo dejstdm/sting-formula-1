@@ -34,6 +34,8 @@ export const PACE = {
  * has no HUD and no bottom fade, the race (Figma 09) has both.
  */
 const LAUNCH_SECONDS = 0.7;
+/** Time constant of the Boost leg drive: clearly faster legs for about 2 s, back to normal by about 4 s. */
+const BOOST_LEGS_FADE = 1.3;
 const INTRO_SECONDS = 0.5;
 const easeOut = (x: number) => 1 - (1 - Math.min(1, Math.max(0, x))) ** 3;
 /** Rival distance at finishAt: full pace minus what the launch loses (a quarter of LAUNCH_SECONDS at full pace). */
@@ -147,6 +149,8 @@ export class RaceScene extends Container {
   /** Distance of the finish line from the start: where the leader is when the clock reaches finishAt. */
   private lineDist = RACE_LENGTH;
   private surge = 0;
+  /** How hard MAX's legs drive after a Boost hit (0 to 1); fades with BOOST_LEGS_FADE. */
+  private legs = 0;
   private boost = 0;
   private boostDone = false;
   private grades: Grade[] = [];
@@ -256,6 +260,7 @@ export class RaceScene extends Container {
     this.playerDist = this.rivalDist = 0;
     this.lineDist = RACE_LENGTH;
     this.surge = 0;
+    this.legs = 0;
     this.boost = 0;
     this.boostDone = false;
     this.grades = [];
@@ -311,6 +316,7 @@ export class RaceScene extends Container {
     this.o.audio?.boost(i, grade, look);
 
     if (isHit(grade)) {
+      this.legs = Math.min(1, 0.45 + 0.4 * look);
       this.kick = look;
       this.shake = look;
       this.streaks = 1.4 * look;
@@ -387,6 +393,7 @@ export class RaceScene extends Container {
     this.energy = Math.max(0, this.energy - RULES.drainPerSecond * dt);
     this.shownEnergy += (this.energy - this.shownEnergy) * Math.min(1, dt * 14);
     this.surge *= Math.exp(-dt / 0.9);
+    this.legs *= Math.exp(-dt / BOOST_LEGS_FADE);
     let vPlayer = PACE.playerSpeed(this.energy) + this.surge;
 
     // Once the result is known, steer the gap so the race ends the way the rules say.
@@ -443,7 +450,7 @@ export class RaceScene extends Container {
     const gap = Math.max(PACE.rivalMinGap, this.rivalDist - this.playerDist);
     const p = placeOnGround(this.fit, RUNNERS.playerZ, RUNNERS.playerLane);
     const r = placeOnGround(this.fit, RUNNERS.playerZ + gap, RUNNERS.rivalLane);
-    this.player.update(p.x, p.y, p.height, dPlayer, dt);
+    this.player.update(p.x, p.y, p.height, dPlayer, dt, this.legs);
     this.rival.update(r.x, r.y, r.height, dRival, dt);
     // Whoever is nearer the camera is drawn in front.
     this.player.zIndex = p.y;

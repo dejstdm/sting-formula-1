@@ -1449,34 +1449,43 @@ body:not(.room) #stage-frame i {
   width: 520px;
   height: 520px;
   border-radius: 50%;
-  background: #f00;
+  /* The Figma glow (red, blur 120) as a gradient: a blur filter this big stalls phones. */
+  background: radial-gradient(closest-side, rgba(255, 0, 0, 0.75), rgba(255, 0, 0, 0.35) 45%, transparent);
   opacity: 0;
-  filter: blur(120px);
+  will-change: opacity;
 }
-/* GET. and SET. punch in (screens.ts restarts the animation for SET.). Only opacity and the
-   separate scale property animate, so the slanted transform stays. */
+/* GET. and SET. punch in (screens.ts restarts the animation for SET.). Animated with
+   transform (keeping the Figma slant) so older iPhones, which lack the separate
+   translate/scale properties, animate too. */
 #ui .lights .word {
-  animation: wordpop 0.4s cubic-bezier(0.2, 0.9, 0.3, 1.2) both;
+  animation: wordpop 0.45s cubic-bezier(0.2, 0.9, 0.3, 1.2) both;
 }
 @keyframes wordpop {
-  0% { opacity: 0; scale: 1.9; }
-  55% { opacity: 1; scale: 0.94; }
-  100% { opacity: 1; scale: 1; }
+  0% { opacity: 0; transform: skewX(-20deg) scaleY(0.94) scale(1.9); }
+  55% { opacity: 1; transform: skewX(-20deg) scaleY(0.94) scale(0.94); }
+  100% { opacity: 1; transform: skewX(-20deg) scaleY(0.94) scale(1); }
 }
 
-/* Lights out (Figma 08), about a second over the race as it starts: STING streaks in from
-   the right (the art's motion trails point that way), overshoots and settles with a squash,
-   a light streak flashes behind it, the red glow pops, the lights lift away, and STING
-   shoots off to the left as the runners get going. */
-#ui .lights .wordmark:not([hidden]) {
-  animation: stingin 1.05s cubic-bezier(0.15, 0.85, 0.3, 1) both;
+/* Lights out (Figma 08), over the race as it starts. STING streaks in from the right edge
+   (the art's motion trails point that way) over 0.45 s, long enough to read even when the
+   phone drops frames as the race starts, overshoots, settles with a squash, holds, then
+   shoots off to the left as the runners get going. A light streak flashes behind it, the
+   red glow pops and the light gantry lifts away. */
+#ui .lights .wordmark {
+  opacity: 0;
+  will-change: transform, opacity;
+}
+#ui .lights.out .wordmark {
+  opacity: 1;
+  animation: stingin 1.45s linear both;
 }
 @keyframes stingin {
-  0% { opacity: 0; translate: 115% 0; scale: 1.2 0.85; }
-  17% { opacity: 1; translate: -5% 0; scale: 1.07 0.96; }
-  30% { translate: 0 0; scale: 1 1; }
-  66% { opacity: 1; translate: -3% 0; scale: 1 1; animation-timing-function: cubic-bezier(0.55, 0, 0.9, 0.45); }
-  100% { opacity: 0; translate: -135% 0; scale: 1.15 0.9; }
+  0% { transform: translateX(78%) scale(1.15, 0.88); animation-timing-function: cubic-bezier(0.2, 0.7, 0.3, 1); }
+  31% { transform: translateX(-6%) scale(1.06, 0.95); animation-timing-function: ease-in-out; }
+  42% { transform: translateX(1.5%) scale(0.98, 1.03); animation-timing-function: ease-out; }
+  50% { transform: translateX(0) scale(1); }
+  72% { transform: translateX(-3%) scale(1); opacity: 1; animation-timing-function: cubic-bezier(0.55, 0, 0.9, 0.45); }
+  100% { transform: translateX(-135%) scale(1.15, 0.9); opacity: 0; }
 }
 #ui .lights .zap {
   left: 0;
@@ -1485,11 +1494,11 @@ body:not(.room) #stage-frame i {
   height: 7px;
   border-radius: 4px;
   background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.95) 45%, #fff 55%, transparent);
-  box-shadow: 0 0 18px 4px rgba(255, 255, 255, 0.6);
   opacity: 0;
+  will-change: transform, opacity;
 }
 #ui .lights.out .zap {
-  animation: zap 0.5s ease-out 0.13s both;
+  animation: zap 0.55s ease-out 0.4s both;
 }
 @keyframes zap {
   0% { opacity: 1; transform: scaleX(0.05); }
@@ -1504,14 +1513,14 @@ body:not(.room) #stage-frame i {
   100% { opacity: 0; }
 }
 #ui .lights.out .stl {
-  animation: stlout 0.45s ease-in 0.3s both;
+  animation: stlout 0.5s ease-in 0.5s both;
 }
 @keyframes stlout {
-  to { opacity: 0; translate: 0 -48px; }
+  to { opacity: 0; transform: translateY(-48px); }
 }
 @media (prefers-reduced-motion: reduce) {
   #ui .lights .word,
-  #ui .lights .wordmark:not([hidden]),
+  #ui .lights.out .wordmark,
   #ui .lights.out .zap,
   #ui .lights.out .flash,
   #ui .lights.out .stl { animation-duration: 0.01s; animation-delay: 0s; }

@@ -346,7 +346,7 @@ export class Screens {
       <div class="stl">${cols}</div>
       <i class="zap"></i>
       <h1 class="word">GET.</h1>
-      <img class="wordmark" src="${BASE}sprites/wordmark.webp" alt="STING" hidden />`,
+      <img class="wordmark" src="${BASE}sprites/wordmark.webp" alt="STING" />`,
     );
     // The overlay is transparent: the race scene underneath is the start grid (Figma 07),
     // so at lights out the same runners simply start running.
@@ -376,13 +376,13 @@ export class Screens {
     cs[1].classList.remove('on');
     cs[2].classList.remove('on');
     word.hidden = true;
-    this.layer.querySelector<HTMLElement>('.wordmark')!.hidden = false;
+    // The wordmark is already drawn (invisible) and on its own layer; .out starts its motion.
     this.layer.classList.add('out');
     this.audio.go();
     // The overlay fades out over the running race (style.css .lights.out), then goes.
     setTimeout(() => {
       if (this.layer.classList.contains('lights')) this.clear();
-    }, 1100);
+    }, 1500);
   }
 
   /** Shared frame of the result screens (Figma 18 to 21): the Figma backdrop and brand tag. */

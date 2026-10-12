@@ -1,0 +1,20 @@
+CUT-OUT ANIMATION PARTS for the SAME runner as in the attached reference image: the same young woman, dark brown shoulder-length hair blowing back, bright red full-body running suit with the thick white vertical stripe down the middle of the back, darker red side panels, dark red shoes. Seen from directly BEHIND, exactly the camera angle and style of the reference.
+
+Draw her split into SEPARATE body parts, like a paper cut-out puppet for 2D animation, laid out on one landscape canvas 1536x1024 with wide empty gaps between the parts (no part touches another). Every part is drawn at the SAME scale as the others, as if cut from one standing figure about 900 px tall.
+
+The parts, in this layout, left to right:
+TOP ROW:
+1) HEAD + NECK + TORSO + HIPS in one piece, seen from behind, standing straight: hair, back with the white stripe, buttocks; NO arms and NO legs (clean rounded shoulder sockets and hip sockets where they attach).
+2) LEFT UPPER ARM (shoulder to elbow), hanging straight down, rounded at both ends.
+3) LEFT FOREARM with the clenched fist, hanging straight down, rounded at the elbow end.
+4) RIGHT UPPER ARM, hanging straight down, rounded at both ends.
+5) RIGHT FOREARM with the clenched fist, hanging straight down.
+BOTTOM ROW:
+6) LEFT THIGH (hip to knee), straight down, rounded at both ends.
+7) LEFT SHIN with the shoe, straight down, seen from behind (heel towards the camera), rounded at the knee end.
+8) RIGHT THIGH, straight down.
+9) RIGHT SHIN with the shoe, straight down, heel towards the camera.
+10) ONE SHOE SOLE seen from directly behind and below (the sole facing the camera, as when a heel kicks up behind a runner).
+
+STYLE (must match the reference exactly): graphic poster illustration, bold flat vector shapes, hard-edged cel shading in dark red and black, clean white highlights, crisp black outlines all round every part. Palette: bright red #FF0000, dark red #AE2129, black, white, skin tones, dark brown hair.
+BACKGROUND: perfectly flat pure chroma green #00FF00 everywhere outside the parts, no floor, no shadow, no labels, no numbers, no text, no logos. Never use green on the runner.

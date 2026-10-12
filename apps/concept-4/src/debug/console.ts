@@ -54,7 +54,7 @@ collector ${s.configured ? esc(s.target) : 'none'} · queued ${s.pending} · sen
       <h1 class="head">DEVICE TEST</h1>
       <p class="lead">The game races three times by itself, so every phone does the same work. Takes about a minute.</p>
       <label class="field"><span>PHONE NAME</span><input id="dev-label" maxlength="60" autocomplete="off" placeholder="e.g. iPhone 11, iOS 17" value="${esc(automaticLabel ? guessLabel(telemetry.device) : telemetry.label)}" /></label>
-      <p class="hint">Model and system. iPhones don’t tell us the model, so type it (Settings › General › About).</p>
+      <p class="hint">Use only the model and system, not your name. iPhones don’t tell us the model, so type it (Settings › General › About).</p>
       <label class="toggle">
         <input type="checkbox" id="dev-saver" aria-describedby="dev-saver-help" />
         <i aria-hidden="true"></i>
@@ -62,7 +62,7 @@ collector ${s.configured ? esc(s.target) : 'none'} · queued ${s.pending} · sen
       </label>
       <p id="dev-warn" class="warn" role="alert" hidden></p>
       <button class="cta primary" data-start="auto"><span>AUTO TEST ×3</span></button>
-      <p class="hint center">Keep the screen on and don’t touch it.</p>
+      <p class="hint center">Keep the screen on and don’t touch it. We send device details, loading and frame timings, Boost results and available battery/network estimates to compare phones and fix slowdowns. Your phone label and device details appear on the results page. Registration fields are not sent.</p>
       <div class="row">
         <button class="cta secondary" data-start="stress"><span>STRESS ×10</span></button>
         <button class="cta secondary" data-start="manual"><span>PLAY</span></button>

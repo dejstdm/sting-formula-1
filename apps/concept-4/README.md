@@ -1,6 +1,13 @@
 # Concept 4: the Figma design, in PixiJS
 
-The client's Figma design (file `n5qDtsydLp1HXcWjsFPJfD`) running at `/concept-4/`. PixiJS 8 on WebGL draws the race; the screens around it are plain HTML and CSS. Live (only after the branch is merged to `main`): https://sting-formula-1.vercel.app/concept-4/
+The client's Figma design (file `n5qDtsydLp1HXcWjsFPJfD`) running at `/concept-4/`. PixiJS 8 on WebGL draws the race; the screens around it are plain HTML and CSS. Current test-site game:
+https://sting-formula-1-test.vercel.app/concept-4/
+
+Share the home page with colleagues for instructions:
+https://sting-formula-1-test.vercel.app/
+
+Device comparisons and recent reports:
+https://sting-formula-1-test.vercel.app/results/
 
 ```bash
 npm run dev:concept-4        # http://localhost:5177/concept-4/
@@ -56,15 +63,16 @@ Not done yet: ElevenLabs or recorded sound, and a voice. The synthesised sounds 
 
 ## Testing on real phones
 
-> **Not live yet.** Vercel deploys only `main`, and this work is still on the branch `concept-4-step-1` (not merged). The link below does not work until it is merged to `main`. Until then, test on a phone with a Vercel preview deployment of the branch, or with `npm run dev -w concept-4` on the same Wi-Fi (it listens on port 5177).
+Open the device test on your phone:
+https://sting-formula-1-test.vercel.app/concept-4/?debug
 
-Once on `main`, open the live link with `?debug`: https://sting-formula-1.vercel.app/concept-4/?debug
+Normal play without `?debug` does not collect device-test reports. The runner comparison at `/concept-4/runs/` is an animation review page, not a device test; it currently returns 404 online and needs a deployment containing this page.
 
 1. Check the suggested phone name and OS. Android uses the detected model and OS when available. Edit the name if needed, especially for an iPhone, which does not reveal its exact model. Names you edit are kept.
 2. Press **AUTO TEST ×3**. The game plays three races with three Perfect Boosts, with no screens in between, so every phone does the same work. Do not touch the screen.
 3. Results send automatically after each race. The console and manual race result screen show **All results sent** after delivery. **SEND** appears only for queued results after sending stops; press it to retry a failed or timed-out request. **COPY** puts all results on the clipboard if sending is not set up. The linked results page includes expandable **Device details**, including measurements already captured by earlier tests.
 
-Each race produces one report: the device (GPU, cores, memory, screen, pixel ratio, refresh rate, browser, network), the page load, the render resolution, and the race (average fps, p50, p95, p99, worst frame, share of frames over 25, 34 and 50 ms, fps for each second, long tasks, the worst frame after each Boost, JS heap where the browser offers it). There is no personal data in it. Reports are kept on the phone and sent when a connection exists.
+Each race produces one report: the device (GPU, cores, memory, screen, pixel ratio, refresh rate, browser, network), the page load, the render resolution, and the race (average fps, p50, p95, p99, worst frame, share of frames over 25, 34 and 50 ms, fps for each second, long tasks, the worst frame after each Boost, JS heap where the browser offers it). Reports also include the phone label, timestamp, build, page path/query, random session/report IDs, test conditions, battery readings where available, manual tap delay, Boost grades, outcome and whether the page was hidden. These measurements help find stutters, loading delays and slowdown across repeated races, and compare devices and builds. Enter only the model and OS in the label, not personal or contact details. Registration fields are not sent. Labels and device details are visible on the results page. The latest 30 reports are kept locally; failed sends remain queued for retry.
 
 ### Collecting the results (Convex)
 

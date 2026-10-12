@@ -2,7 +2,7 @@
 
 Showcase prototypes of the game proposed in `2026-09-30-STING_x_F1_2027-Engagement-Program.pptx`. You race a digital rival for about 15 seconds. Your energy drains, three Boost Zones open, and you tap at the right moment. An F1 car sweeps you through the finish.
 
-Four concepts, each built on its own so they can be compared. They are prototypes: no backend, no personal data, no real prizes, and no licensed F1 assets.
+Concept 4 is the current game for device testing. Concepts 1 to 3 are earlier experiments, parked until needed. Rewards and registration are previews; device-test reports are stored in Convex.
 
 | Concept | Path | What it is | README |
 |---|---|---|---|
@@ -13,11 +13,36 @@ Four concepts, each built on its own so they can be compared. They are prototype
 
 `/` is the page we send to colleagues: it asks them to run the concept 4 device test on their phone, explains the steps, and has a QR code for anyone who opens it on a computer. Concepts 1 to 3, built before the Figma design was finished, sit below it as earlier prototypes. An old link such as `/?name=MAX` still opens concept 1 and keeps the query string.
 
-Live: https://sting-formula-1.vercel.app/ (only `main` is deployed; concept 4 appears at https://sting-formula-1.vercel.app/concept-4/ once its branch is merged)
+## Links to share
+
+Send DM colleagues the main tester page:
+https://sting-formula-1-test.vercel.app/
+
+It explains the test and links to these pages:
+
+- Device test. AUTO TEST ×3 runs comparable races and sends performance reports. PLAY here also records a manual race.
+  https://sting-formula-1-test.vercel.app/concept-4/?debug
+- Just play. The current Figma-based game, without device-test report collection.
+  https://sting-formula-1-test.vercel.app/concept-4/
+- Results. Device comparisons and recent race reports, including expandable device details.
+  https://sting-formula-1-test.vercel.app/results/
+- Runner comparison. Development page for reviewing animation variants and Boost speed. Available locally; the online URL currently returns 404 and needs a deployment containing this page. It does not send device-test reports.
+  https://sting-formula-1-test.vercel.app/concept-4/runs/
+
+Concepts 1 to 3 are linked at the bottom of the home page. They are not part of the current test. Use the test-site address above for this testing round; the older `sting-formula-1.vercel.app` address is not the sharing link.
+
+## What the device test collects and why
+
+Only Concept 4 with `?debug` creates these reports. Each race records the phone label, browser/OS and available hardware details, screen size, loading time, FPS and frame delays, Boost and finish performance, tap delay for manual play, and available memory, battery and network estimates. Reports also include the build, page path/query, timestamp, random session/report IDs, test mode, battery-saver setting, Boost grades, race outcome and whether the page was hidden.
+
+We use this to find stutters, slow loading, delayed input and slowdown over repeated races, compare devices and builds, and decide where to optimise. Some browsers omit measurements. Use only the model and OS in the phone label, not your name or contact details. Registration fields are not sent in these reports. Device details and labels are visible on the results page.
+
+Reports send automatically to Convex after each race. Failed sends stay queued in browser storage for retry with SEND; COPY provides a manual fallback. The browser keeps the latest 30 reports locally.
 
 ## Run it
 
 ```bash
+cd /home/dejan/projects/games/sting-formula-1
 npm install
 npm run dev              # concept 1  http://localhost:5173/concept-1/  (also on your LAN)
 npm run dev:concept-2    # http://localhost:5174/concept-2/

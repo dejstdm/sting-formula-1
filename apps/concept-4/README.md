@@ -66,7 +66,7 @@ Not done yet: ElevenLabs or recorded sound, and a voice. The synthesised sounds 
 Open the device test on your phone:
 https://sting-formula-1-test.vercel.app/concept-4/?debug
 
-Normal play without `?debug` does not collect device-test reports. The runner comparison at `/concept-4/runs/` is an animation review page, not a device test; it currently returns 404 online and needs a deployment containing this page.
+Normal play without `?debug` does not collect device-test reports. The runner comparison at `/concept-4/runs/` is an animation review page, not a device test.
 
 1. Check the suggested phone name and OS. Android uses the detected model and OS when available. Edit the name if needed, especially for an iPhone, which does not reveal its exact model. Names you edit are kept.
 2. Press **AUTO TEST ×3**. The game plays three races with three Perfect Boosts, with no screens in between, so every phone does the same work. Do not touch the screen.

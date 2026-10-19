@@ -1,0 +1,14 @@
+Turn the FIRST attached image into a finished illustration. It is a rough 3D blocking of ONE frame of a running animation: the pose, the camera and the position of every body part are FINAL. Keep the pose EXACTLY: the same position and angle of the head, torso, both upper arms, both elbows, both forearms and fists, both thighs, both knees, both lower legs and both shoes. Do not move any limb into a different pose. Do not straighten or lower the arms. Only replace the crude blocks with a real, well-drawn human body.
+
+Canvas: portrait 1024x1536, the figure at the same place and the same size as in the first image.
+
+CHARACTER: the runner in the SECOND attached image: a young woman with dark brown shoulder-length hair blowing back, a bright red full-body running suit with the thick white vertical stripe down the middle of the back, darker red side panels, white cuffs on the upper arms, bare hands in loose fists, dark red running shoes. Seen from behind, no face visible.
+
+In the blocking, the darker red limbs are her LEFT arm and leg, the brighter red limbs her RIGHT arm and leg. A dark red patch on a shoe is the SOLE of that shoe facing the camera: draw the sole visible there. A dark grey patch is the heel of the shoe.
+
+This frame: Mid-stance, body at its lowest: the LEFT foot flat on the ground under the hips, left knee slightly bent. The RIGHT knee swings forward, the right shoe still tucked up high under the right buttock, its sole facing the camera. Arms passing the body: left elbow bent at her side, right elbow bent and back.
+
+Feet and ankles must look alive: the ankle flexed, the heel lifting at push-off, the toes pointing down after push-off.
+
+STYLE (must match the second image exactly): graphic poster illustration, bold flat vector shapes, hard-edged cel shading in dark red and black, clean white highlights, crisp black outlines. Palette: bright red #FF0000, dark red #AE2129, black, white, skin tones, dark brown hair.
+BACKGROUND: perfectly flat pure chroma green #00FF00 everywhere outside the figure, no floor, no shadow, no text. Never use green on the runner.

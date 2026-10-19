@@ -8,7 +8,8 @@
 - The finish pictures: doc/concept-4/figma-finish/raw/ (the designer's Figma images), resized to 750 px wide.
 - Figma art (figma/): the track backdrop and the Sting can, re-encoded as WebP.
 
-Usage: python3 pack.py
+Usage: python3 pack.py            (everything)
+       python3 pack.py compare    (only the run comparison candidates, COMPARE_SHEETS)
 """
 from pathlib import Path
 from PIL import Image, ImageChops, ImageDraw, ImageFilter
@@ -67,6 +68,13 @@ RUN_SHEETS = {
     'max': ('max-trace-run4-c', 4, 1, (1, 2, 3, 4), 'stripe'),
     'rival': ('rival-run4-b', 4, 1, (1, 2, 3, 4), 'head'),
 }
+# Candidates for the run comparison page (public/runs/), not used by the game yet.
+# A list of names instead of a sheet: one generated image per frame of the whole stride,
+# each a rough 3D blocking in MAX's colours (pose_guide3d.py --frames) redrawn by
+# prompts/max-run12-paint*.txt. Packed 6x2, nothing mirrored.
+COMPARE_SHEETS = {
+    'max-12': ([f'max-run12-p{i}' for i in range(1, 13)], 6, 2, tuple(range(1, 13)), 'stripe-keep'),
+}
 NECK = 0.13            # share of the figure height from the head top down to the neck
 
 
@@ -83,13 +91,87 @@ def stripe_x(cell, box):
     return xs[len(xs) // 2]
 
 
+def stripe_len(cell):
+    """Head top to the bottom end of the white back stripe: a body measure that does not
+    change with the pose, used to give separately generated frames one scale."""
+    return stripe_run(cell)[1] - bbox(cell)[1]
+
+
+def stripe_run(cell):
+    """Top and bottom y of the white stripe down MAX's back. The top sits just under the collar."""
+    box = bbox(cell)
+    sx = stripe_x(cell, box)
+    px = cell.load()
+    w, h = box[2] - box[0], box[3] - box[1]
+    band = range(round(sx - 0.12 * w), round(sx + 0.12 * w))
+    # The stripe slants as the torso twists, so look for a white run anywhere in a band
+    # around the spine, row by row; light grey counts too (shaded lower stripe).
+    def white(x, y):
+        r, g, b, a = px[x, y]
+        return a > 200 and min(r, g, b) > 170 and max(r, g, b) - min(r, g, b) < 40
+    ys = [y for y in range(int(box[1] + 0.15 * h), int(box[1] + 0.6 * h))
+          if sum(white(x, y) for x in band) >= 4]
+    # The stripe is the longest unbroken run of such rows; the collar edge above it and
+    # the white piping on the legs below are shorter runs.
+    runs, start, end = [], ys[0], ys[0]
+    for y in ys[1:] + [10**9]:
+        if y - end > 8:
+            runs.append((end - start, start, end))
+            start = y
+        end = y
+    return max(runs)[1:]
+
+
+def main_body(cell):
+    """Clear specks that float free of the figure (a stray hair fleck in a generated frame):
+    keep only the largest connected shape, found on a quarter-size mask."""
+    small = cell.getchannel('A').resize((cell.width // 4, cell.height // 4)).point(lambda v: 255 if v > 40 else 0)
+    w, h = small.size
+    px = small.load()
+    seen, best = set(), set()
+    for y0 in range(h):
+        for x0 in range(w):
+            if px[x0, y0] and (x0, y0) not in seen:
+                comp, stack = set(), [(x0, y0)]
+                seen.add((x0, y0))
+                while stack:
+                    x, y = stack.pop()
+                    comp.add((x, y))
+                    for nx, ny in ((x + 1, y), (x - 1, y), (x, y + 1), (x, y - 1)):
+                        if 0 <= nx < w and 0 <= ny < h and px[nx, ny] and (nx, ny) not in seen:
+                            seen.add((nx, ny))
+                            stack.append((nx, ny))
+                if len(comp) > len(best):
+                    best = comp
+    keep = Image.new('L', (w, h), 0)
+    kp = keep.load()
+    for x, y in best:
+        kp[x, y] = 255
+    keep = keep.filter(ImageFilter.MaxFilter(5)).resize(cell.size)
+    out = cell.copy()
+    out.putalpha(ImageChops.multiply(cell.getchannel('A'), keep))
+    return out
+
+
+def same_scale(cells):
+    lens = [stripe_len(c) for c in cells]
+    ref = sorted(lens)[len(lens) // 2]
+    print('  stripe lengths', lens, '-> scaled to', ref)
+    return [c.resize((round(c.width * ref / n), round(c.height * ref / n)), Image.LANCZOS) for c, n in zip(cells, lens)]
+
+
 def compose(cell, mirror, anchor):
     """One frame, returned with its anchor x: the body (mirrored around the anchor for the
     second half of the stride) with the original, unmirrored head laid over it, centred
-    on the anchor."""
+    on the anchor.
+
+    'stripe-keep' (frames drawn one per image, never mirrored) only centres the frame on the
+    stripe and leaves the head on its own neck; moving it onto the stripe tore it off."""
     box = bbox(cell)
     h = box[3] - box[1]
     hx = head_x(cell, box)
+    if anchor == 'stripe-keep':
+        return cell, stripe_x(cell, box)
     ax = stripe_x(cell, box) if anchor == 'stripe' else hx
     shift = round(ax - hx)
     if not mirror and not shift:
@@ -133,14 +215,17 @@ def compose(cell, mirror, anchor):
     return out, ax
 
 
-def run_strip(who):
-    """8-frame run cycle as a 4x2 sheet. Frames share one scale, the head top on one line
-    and the anchor (see RUN_SHEETS) centred; the bounce comes from src/race/runner.ts."""
-    sheet, cols, rows, order, anchor = RUN_SHEETS[who]
-    cells = [key_green(c) for c in grid(Image.open(GEN / f'{sheet}.png'), cols, rows)]
+def run_strip(who, spec=None, out=None):
+    """Run cycle as an Nx2 sheet (4x2 for the game). Frames share one scale, the head top on
+    one line and the anchor (see RUN_SHEETS) centred; the bounce comes from src/race/runner.ts."""
+    sheet, cols, rows, order, anchor = spec or RUN_SHEETS[who]
+    if isinstance(sheet, list):
+        cells = same_scale([main_body(key_green(Image.open(GEN / f'{n}.png'))) for n in sheet])
+    else:
+        cells = [key_green(c) for c in grid(Image.open(GEN / f'{sheet}.png'), cols, rows)]
     cells = [cells[i - 1] for i in order]
     framed = [compose(c, False, anchor) for c in cells]
-    if len(cells) == 4:
+    if rows == 1:   # half a stride: the second half is the mirror image
         framed += [compose(c, True, anchor) for c in cells]
     cells = [c for c, _ in framed]
     anchors = [ax for _, ax in framed]
@@ -153,12 +238,17 @@ def run_strip(who):
     height = reach + 2 * PAD
     scale = FRAME_H / figure
     fw, fh = round(half_w * 2 * scale), round(height * scale)
-    strip = Image.new('RGBA', (fw * 4, fh * 2))
+    per_row = len(cells) // 2
+    strip = Image.new('RGBA', (fw * per_row, fh * 2))
     for i, (cell, ax, b) in enumerate(zip(cells, anchors, boxes)):
         f = Image.new('RGBA', (int(half_w * 2), height))
         f.alpha_composite(cell, (int(half_w - ax), PAD - b[1]))
-        strip.alpha_composite(f.resize((fw, fh), Image.LANCZOS), ((i % 4) * fw, (i // 4) * fh))
-    save(strip, f'runner-{who}-run', quality=88)
+        strip.alpha_composite(f.resize((fw, fh), Image.LANCZOS), ((i % per_row) * fw, (i // per_row) * fh))
+    if out:
+        strip.save(out, quality=88, method=6)
+        print(f'{out.name}  {strip.width}x{strip.height}  {out.stat().st_size // 1024} KB')
+    else:
+        save(strip, f'runner-{who}-run', quality=88)
     print(f'  frame {fw}x{fh}, head top {round(PAD * scale)}px, ground {round((PAD + figure) * scale)}px from the frame top')
     print('  frame bottoms', [round((PAD + b[3] - b[1]) * scale) for b in boxes])
 
@@ -279,5 +369,11 @@ def main():
     save(can, 'sting-can', quality=90)
 
 
+def compare():
+    for name, spec in COMPARE_SHEETS.items():
+        run_strip(name, spec, HERE.parent / 'public' / 'runs' / f'{name}.webp')
+
+
 if __name__ == '__main__':
-    main()
+    import sys
+    compare() if sys.argv[1:] == ['compare'] else main()

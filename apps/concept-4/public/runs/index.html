@@ -6,68 +6,87 @@
     <meta name="theme-color" content="#000000" />
     <title>Run comparison · Concept 4</title>
     <style>
-      html, body { margin: 0; height: 100%; background: #000; color: #fff; font: 14px/1.4 system-ui, sans-serif; }
-      header { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 14px; border-bottom: 1px solid #222; }
+      html, body { margin: 0; background: #000; color: #fff; font: 14px/1.4 system-ui, sans-serif; }
+      header { position: sticky; top: 0; z-index: 5; display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 14px; background: #000; border-bottom: 1px solid #222; }
       header h1 { margin: 0; font-size: 16px; letter-spacing: .08em; text-transform: uppercase; }
-      .controls { display: flex; gap: 8px; align-items: center; }
-      button { font: inherit; color: #fff; background: #111; border: 1px solid #444; border-radius: 6px; padding: 8px 12px; cursor: pointer; }
+      header p { margin: 2px 0 0; color: #999; font-size: 12px; }
+      button { font: inherit; color: #fff; background: #111; border: 1px solid #444; border-radius: 6px; padding: 8px 14px; cursor: pointer; }
       button.boost { background: #d00000; border-color: #ff3b30; font-weight: 700; }
       button:active { transform: translateY(1px); }
-      .lanes { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 8px; padding: 8px; height: calc(100% - 120px); }
-      .lane { position: relative; overflow: hidden; border: 1px solid #222; border-radius: 8px; background: #000; }
+      main { padding: 4px 8px 16px; }
+      .group h2 { margin: 14px 6px 8px; font-size: 12px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: #bbb; }
+      .group h2 span { font-weight: 400; letter-spacing: 0; text-transform: none; color: #777; margin-left: 6px; }
+      /* Every row uses the same three columns, phones included, so lanes stay the same size and line up across rows. */
+      .lanes { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+      .lane { position: relative; overflow: hidden; height: min(68vh, 560px); border: 1px solid #222; border-radius: 8px; background: #000; }
       .lane .track { position: absolute; inset: 0; background: url(../sprites/backdrop-track.webp) center bottom / cover no-repeat; }
-      .lane canvas.rig { position: absolute; left: 0; top: 0; width: 100%; height: 100%; }
-      .runner { position: absolute; left: 50%; bottom: 9%; height: 74%; aspect-ratio: var(--fw) / var(--fh); transform: translateX(-50%); background-repeat: no-repeat; background-size: 400% 200%; }
+      .runner { position: absolute; left: 50%; bottom: 9%; height: 74%; aspect-ratio: var(--fw) / var(--fh); transform: translateX(-50%); background-repeat: no-repeat; }
       .label { position: absolute; left: 0; right: 0; top: 0; z-index: 2; padding: 8px 10px; background: linear-gradient(#000c, #0000); }
-      .lane .rate { position: absolute; left: 0; right: 0; bottom: 0; z-index: 2; padding: 6px 10px; background: #000c; color: #fff; font-weight: 700; }
       .label b { display: block; font-size: 15px; }
-            footer { padding: 6px 14px; color: #bbb; font-size: 12px; }
+      .label small { color: #bbb; }
+      .lane .rate { position: absolute; left: 0; right: 0; bottom: 0; z-index: 2; padding: 6px 10px; background: #000c; color: #fff; font-weight: 700; }
+      @media (max-width: 760px) {
+        .lanes { gap: 4px; }
+        .lane { height: 52vh; }
+        .label { padding: 6px; }
+        .label b, .lane .rate { font-size: 11px; }
+        .lane .rate { padding: 4px 6px; }
+      }
     </style>
   </head>
   <body>
     <header>
-      <h1>Run comparison</h1>
-      <div class="controls">
-        <button class="boost" id="boost">BOOST</button>
+      <div>
+        <h1>Run comparison</h1>
+        <p>Race pace is 2.05 strides per second. BOOST shows the sprint, as in the game.</p>
       </div>
+      <button class="boost" id="boost">BOOST</button>
     </header>
-    <main class="lanes" id="lanes"></main>
-    <footer>Press BOOST to see the sprint. Each runner's strides per second are shown at its bottom. Race pace is 2.05 strides per second.</footer>
-    <script src="rig.js"></script>
+    <main id="groups"></main>
     <script>
       // Same timing as src/race/runner.ts: 2.05 strides per second at race pace.
       // A BOOST click works as in the game: the stride rate jumps 85% and fades back (1.3 s time constant).
       const CADENCE = 2.05, BOOST = 0.85, FADE = 1.3;
-      // type 'sheet': a 4x2 run-cycle sheet (8 frames per stride). type 'rig': cut-out parts animated in rig.js.
-      const RUNNERS = [
-        { name: 'A · Current (game)', sheet: '../sprites/runner-max-run.webp' },
-        { name: 'B · New, drawn from the reference', sheet: 'max-8.webp' },
-        { name: 'C · New, poses traced from the grey rival', sheet: 'red-trace-8.webp' },
+      // Each sheet is one stride in two rows: cols frames per row (4x2 = 8 frames, 6x2 = 12).
+      // Each group is one row of the grid. speed slows a lane down for close study.
+      const GROUPS = [
+        { title: 'Sprite sheets', note: '8 baked frames per stride', runners: [
+          { name: 'A · Current (game)', sheet: '../sprites/runner-max-run.webp' },
+          { name: 'B · New, drawn from the reference', sheet: 'max-8.webp' },
+          { name: 'C · New, poses traced from the grey rival', sheet: 'red-trace-8.webp' },
+        ] },
+        { title: 'New candidate', note: '12 frames per stride, poses from a 3D sprint model', runners: [
+          { name: 'D · New, 12 frames', sheet: 'max-12.webp', cols: 6 },
+          { name: 'D · New, slow motion', note: '¼ speed', sheet: 'max-12.webp', cols: 6, speed: 0.25 },
+          { name: 'A · Current, slow motion', note: '¼ speed', sheet: '../sprites/runner-max-run.webp', speed: 0.25 },
+        ] },
       ];
-      const lanes = document.getElementById('lanes');
+      const groups = document.getElementById('groups');
       const runners = [];
-      for (const r of RUNNERS) {
-        const lane = document.createElement('div');
-        lane.className = 'lane';
-        lane.innerHTML = `<div class="track"></div><div class="label"><b>${r.name}</b></div><div class="runner"></div><div class="rate"></div>`;
-        lanes.append(lane);
-        const el = lane.querySelector('.runner');
-        if (r.type === 'rig') {
-          const canvas = document.createElement('canvas');
-          canvas.className = 'rig';
-          lane.insertBefore(canvas, el);
-          el.remove();
-          runners.push({ phase: 0, rig: window.makeRig?.(canvas, r), rate: lane.querySelector('.rate') });
-          continue;
+      for (const g of GROUPS) {
+        const section = document.createElement('section');
+        section.className = 'group';
+        section.innerHTML = `<h2>${g.title}<span>${g.note}</span></h2><div class="lanes"></div>`;
+        groups.append(section);
+        const lanes = section.querySelector('.lanes');
+        for (const r of g.runners) {
+          const lane = document.createElement('div');
+          lane.className = 'lane';
+          lane.innerHTML = `<div class="track"></div><div class="label"><b>${r.name}</b>${r.note ? `<small>${r.note}</small>` : ''}</div><div class="runner"></div><div class="rate"></div>`;
+          lanes.append(lane);
+          const el = lane.querySelector('.runner');
+          const speed = r.speed ?? 1;
+          const cols = r.cols ?? 4;
+          el.style.backgroundSize = `${cols * 100}% 200%`;
+          const img = new Image();
+          img.onload = () => {
+            el.style.setProperty('--fw', img.width / cols);
+            el.style.setProperty('--fh', img.height / 2);
+            el.style.backgroundImage = `url(${r.sheet})`;
+          };
+          img.src = r.sheet;
+          runners.push({ phase: 0, speed, cols, el, rate: lane.querySelector('.rate'), shown: -1 });
         }
-        const img = new Image();
-        img.onload = () => {
-          el.style.setProperty('--fw', img.width / 4);
-          el.style.setProperty('--fh', img.height / 2);
-          el.style.backgroundImage = `url(${r.sheet})`;
-        };
-        img.src = r.sheet;
-        runners.push({ phase: 0, el, rate: lane.querySelector('.rate'), shown: -1 });
       }
       const boostBtn = document.getElementById('boost');
       let level = 0, last = 0;
@@ -78,12 +97,11 @@
         level *= Math.exp(-dt / FADE);
         const rate = CADENCE * (1 + BOOST * level);
         for (const s of runners) {
-          s.phase = (s.phase + dt * rate) % 1; // one full stride = 8 frames
-          s.rate.textContent = `${rate.toFixed(2)} strides/s`;
-          if (s.rig !== undefined) { s.rig?.draw(s.phase, level); continue; }
-          const idx = Math.floor(s.phase * 8);
+          s.phase = (s.phase + dt * rate * s.speed) % 1; // one full stride = cols * 2 frames
+          s.rate.textContent = s.speed === 1 ? `${rate.toFixed(2)} strides/s` : `${rate.toFixed(2)} strides/s, shown at ${s.speed}×`;
+          const idx = Math.floor(s.phase * s.cols * 2);
           if (idx !== s.shown && s.el.style.backgroundImage) {
-            s.el.style.backgroundPosition = `${((idx % 4) * 100) / 3}% ${Math.floor(idx / 4) * 100}%`;
+            s.el.style.backgroundPosition = `${((idx % s.cols) * 100) / (s.cols - 1)}% ${Math.floor(idx / s.cols) * 100}%`;
             s.shown = idx;
           }
         }

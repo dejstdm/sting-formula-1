@@ -6,6 +6,17 @@ Everything in `../public/sprites/` comes from this folder.
 - `prompts/` holds the prompts for the run cycles. `*-run4.txt` (used) asks for one row of four frames, half a stride, of one Figma runner on flat chroma green (#00FF00). Two images go with it: the runner's race picture as the character reference, and `run4-pose-guide.png`, a stick-figure guide for the limb positions drawn by `pose_guide.py`. The older `*-run8.txt` asked for all eight frames at once; the model drew them inconsistently (limp arms, a body that changed shape between frames), which made the running look unnatural.
 - `gen/` keeps the raw generated sheets, because generation never returns the same picture twice. In use: `rival-run4-b.png` (keeps the Figma rival's grey skin) and `max-trace-run4-c.png`. MAX's own sheets (`max-run4-*`) drew her body differently in every frame, so she wobbled; `max-trace-run4-*` were made with `prompts/max-from-rival-run4.txt`, which asks the model to redraw the rival's sheet as MAX, pose for pose, so both runners move the same way. The `-run8-` sheets are the first version.
 
+## Candidate D: 12 frames from a 3D sprint model
+
+Not in the game yet; it runs on the comparison page (`/concept-4/runs/`, `../public/runs/max-12.webp`). Made one frame per image, because a model asked for a whole row of poses falls back to one stock pose, with the arms frozen as in the Figma picture.
+
+1. `python3 pose_guide3d.py --frames` renders a 3D mannequin at the 12 points of one stride (`prompts/run12-paint-1..12.png`). Hip, knee, ankle, toe and arm angles follow sprint kinematics, in perspective from behind, so foreshortening and the moment each sole turns to the camera are right. It is drawn in MAX's colours (darker red for her left limbs, dark red patches for soles facing the camera) so the model treats it as a rough drawing to finish and keeps the pose. `--strip` renders all 12 frames colour-coded for review.
+2. Each frame is redrawn by Codex with the rough frame and `prompts/max-character-ref.png` (a frame of an earlier sheet, for the character):
+   ```bash
+   for i in $(seq 1 12); do ./gen.sh max-run12-p$i prompts/max-run12-paint$i.txt prompts/run12-paint-$i.png prompts/max-character-ref.png & done; wait
+   ```
+3. `python3 pack.py compare` keys out the green, removes loose specks, gives every frame the same scale (head top to the end of the white back stripe), centres it on the stripe and writes the 6x2 sheet. Nothing is mirrored: a mirrored body needs a pasted head, and the seam showed at the neck.
+
 ## Steps
 
 1. Generate the run sheets with Codex's image tool (needs the Codex CLI with image generation enabled):
